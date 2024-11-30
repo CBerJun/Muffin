@@ -260,7 +260,7 @@ const OpCodes = {
     ADD_ING_TO_BOWL: 2,  // ing, bowl
     REMOVE_ING_FROM_BOWL: 3,  // ing, bowl
     CLEAN_BOWL: 4,  // bowl
-    DOUBLE_BOWL: 5,  // bowl
+    ADD_WATER_TO_BOWL: 5,  // bowl, num
     TRANSFER_HALF: 6,  // bowl1, bowl2
     TRANSFER_ALL: 7,  // bowl1, bowl2
     GO_TO: 8,  // step
@@ -270,7 +270,7 @@ const OpCodes = {
     MOLD_POP: 12,  // mold
     MOLD_POP_AND_STORE: 13,  // mold, bowl
     MICROWAVE: 14,  // mold
-    MOLD_PUSH_ING: 15,  // ing
+    MOLD_PUSH_ING: 15,  // mold, ing
     SERVE_WITH: 16,  // recipe
 };
 
@@ -430,7 +430,7 @@ class Parser {
                     predicate = this.predicate();
                     tok2 = this.expect(TokenKind.KEY_PHRASE);
                 }
-                const step_content = this.step_content(tok2);
+                const step_content = this.step_content(tok2, i);
                 recipe.steps.push(new Step(step_content, predicate));
                 i++;
             }
@@ -530,8 +530,16 @@ class Parser {
         }
         return value;
     }
-    step_content(tok) {
+    positive_int() {
+        const num = this.expect(TokenKind.NUMBER);
+        if (num.value <= 0) {
+            this.complain(num, `should be positive, not ${num.value}`);
+        }
+        return num.value;
+    }
+    step_content(tok, step_num) {
         let ret;
+        let consume_new_line = true;
         switch (tok.value) {
             case "set up a": {
                 const tok = this.expect(TokenKind.PHRASE);
@@ -550,12 +558,9 @@ class Parser {
                 break;
             }
             case "set up": {
-                const num = this.expect(TokenKind.NUMBER);
-                if (num.value <= 0) {
-                    this.complain(num, `${num.value} bowls/molds??`);
-                }
+                const num = this.positive_int();
                 const tok = this.expect(TokenKind.PHRASE);
-                const idx = +(num.value > 1);
+                const idx = +(num > 1);
                 const bowl = bowls.find((x) => x[idx] == tok.value);
                 if (bowl) {
                     ret = {op: OpCodes.SET_UP_BOWL, bowl_kind: bowl[0]};
@@ -571,14 +576,121 @@ class Parser {
                         );
                     }
                 }
-                ret.num = num.value;
+                ret.num = num;
                 break;
             }
             case "add": {
                 const value = this.int_ingredient();
                 this.expect_keyword("into");
+                const [kind, ob] = this.bowl_or_mold();
+                ret = kind == "bowl" ?
+                    {op: OpCodes.ADD_ING_TO_BOWL, bowl: ob}
+                    : {op: OpCodes.MOLD_PUSH_ING, mold: ob};
+                ret.ing = value;
+                break;
+            }
+            case "remove": {
+                const value = this.int_ingredient();
+                this.expect_keyword("from");
                 const bowl = this.bowl();
-                ret = {op: OpCodes.ADD_ING_TO_BOWL, ing: value, bowl: bowl};
+                ret = {
+                    op: OpCodes.REMOVE_ING_FROM_BOWL, bowl: bowl, ing: value
+                };
+                break;
+            }
+            case "clean": {
+                const bowl = this.bowl();
+                ret = {op: OpCodes.CLEAN_BOWL, bowl: bowl};
+                break;
+            }
+            case "add water to": {
+                const bowl = this.bowl();
+                this.expect_keyword("at a");
+                const one = this.expect(TokenKind.NUMBER);
+                if (one.value != 1) {
+                    this.complain(
+                        one,
+                        `left hand side of ratio must be 1, not ${one.value}`
+                    );
+                }
+                this.expect(TokenKind.COLON);
+                const num = this.positive_int();
+                this.expect_keyword("ratio");
+                ret = {op: OpCodes.ADD_WATER_TO_BOWL, bowl: bowl, num: num};
+                break;
+            }
+            case "pour half of contents of": {
+                const bowl1 = this.bowl();
+                this.expect_keyword("into");
+                const bowl2 = this.bowl();
+                ret = {op: OpCodes.TRANSFER_HALF, bowl1: bowl1, bowl2: bowl2};
+                break;
+            }
+            case "pour contents of": {
+                const bowl1 = this.bowl();
+                this.expect_keyword("into");
+                const [kind, second] = this.bowl_or_mold();
+                ret = kind == "bowl" ?
+                    {op: OpCodes.TRANSFER_ALL, bowl1: bowl1, bowl2: second}
+                    : {op: OpCodes.MOLD_PUSH_BOWL, mold: second, bowl: bowl1};
+                break;
+            }
+            case "proceed to step": {
+                const num = this.expect(TokenKind.NUMBER);
+                if (num.value <= step_num) {
+                    this.complain(num, "must be a future step number");
+                }
+                ret = {op: OpCodes.GO_TO, step: num.value};
+                break;
+            }
+            case "go back to step": {
+                const num = this.expect(TokenKind.NUMBER);
+                if (num.value >= step_num || num.value <= 0) {
+                    this.complain(num, "must be a previous step number");
+                }
+                ret = {op: OpCodes.GO_TO, step: num.value};
+                break;
+            }
+            case "place": {
+                const bowl = this.bowl();
+                this.expect_keyword("in the oven and bake at");
+                const temp = this.expect(TokenKind.TEMPERATURE);
+                // TODO verify temperature is valid
+                ret = {op: OpCodes.BAKE, bowl: bowl, temperature: temp.value};
+                break;
+            }
+            case "serves": {
+                const num = this.positive_int();
+                ret = {op: OpCodes.SERVES, num: num};
+                break;
+            }
+            case "remove a layer from": {
+                const mold = this.mold();
+                const second = this.expect(
+                    TokenKind.NEW_LINE, TokenKind.KEY_PHRASE
+                );
+                if (second.kind == TokenKind.NEW_LINE) {
+                    consume_new_line = false;
+                    ret = {op: OpCodes.MOLD_POP, mold: mold};
+                    break;
+                }
+                if (second.value != "and dump into") {
+                    this.complain(
+                        second, `keyword "${second.value}" can't be used here`
+                    );
+                }
+                const bowl = this.bowl();
+                ret = {op: OpCodes.MOLD_POP_AND_STORE, mold: mold, bowl: bowl};
+                break;
+            }
+            case "microwave": {
+                const mold = this.mold();
+                ret = {op: OpCodes.MICROWAVE, mold: mold};
+                break;
+            }
+            case "serve with": {
+                const recipe = this.expect(TokenKind.PHRASE);
+                ret = {op: OpCodes.SERVE_WITH, recipe: recipe};
                 break;
             }
             // TODO
@@ -586,7 +698,9 @@ class Parser {
                 this.complain(tok, `unknown step "${tok.value}"`);
             }
         }
-        this.expect(TokenKind.NEW_LINE);
+        if (consume_new_line) {
+            this.expect(TokenKind.NEW_LINE);
+        }
         return ret;
     }
 }
@@ -594,3 +708,29 @@ class Parser {
 function parse(tokens) {
     return new Parser(tokens).program();
 }
+
+const prog = parse(tokenize(
+`
+Muffin recipe
+ingredients
+    1 Blueberry
+    20 grams of Butter
+method
+    1. set up 4 Bowls
+    2. add Blueberry into 3rd Bowl
+    3. add water to 1st Bowl at a 1:1 ratio
+    4. pour half of contents of 1st Bowl into 4th Bowl
+    5. remove Butter from 4th Bowl
+    6. if 4th Bowl is empty, proceed to step 15
+    7. place 3rd Bowl in the oven and bake at 190C
+    8. clean 4th Bowl
+    9. pour contents of 2nd Bowl into 4th Bowl
+    10. add water to 3rd Bowl at a 1:1 ratio
+    11. pour half of contents of 3rd Bowl into 2nd Bowl
+    12. pour contents of 4th Bowl into 3rd Bowl
+    13. add Blueberry into 1st Bowl
+    14. go back to step 3
+    15. serves 1
+`
+));
+console.dir(prog, {depth: null});
