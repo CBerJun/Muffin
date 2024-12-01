@@ -19,13 +19,6 @@ const TokenNames = Object.fromEntries(
     Object.entries(TokenKind).map((x) => x.reverse())
 );
 
-class Temperature {
-    constructor(scale, value) {
-        this.scale = scale;  // 'C' or 'F'
-        this.value = value;
-    }
-}
-
 class Token {
     constructor(kind, loc, value=null) {
         this.kind = kind;
@@ -35,13 +28,15 @@ class Token {
 };
 
 class CompileError {
-    constructor(message, line_no, col_no) {
+    constructor(message, loc) {
         this.message = message;
-        this.line_no = line_no;
-        this.col_no = col_no;
+        this.loc = loc;  // [line_no, col_no] or null
     }
     format() {
-        return `${this.line_no}:${this.col_no}: ${this.message}`;
+        if (this.loc == null) {
+            return this.message;
+        }
+        return `${this.loc[0]}:${this.loc[1]}: ${this.message}`;
     }
 }
 
@@ -100,8 +95,7 @@ class Tokenizer {
     }
     complain(message, col_no=null) {
         throw new CompileError(
-            message, this.line_no,
-            col_no == null ? this.col_no : col_no
+            message, [this.line_no, col_no == null ? this.col_no : col_no]
         );
     }
     skip_ws() {
@@ -141,7 +135,7 @@ class Tokenizer {
                 else if (suffix_match == 'C' || suffix_match == 'F') {
                     res.push(new Token(
                         TokenKind.TEMPERATURE, loc,
-                        new Temperature(suffix_match, number)
+                        number + suffix_match
                     ));
                 }
                 else if (ordinal_suffixes.includes(suffix_match)) {
@@ -250,7 +244,7 @@ class Program {
 
 class Recipe {
     constructor() {
-        this.steps = [];  // Objects with the `op` attribute
+        this.steps = [];  // Step objects
     }
 }
 
@@ -283,8 +277,8 @@ const PredicateKind = {
 
 class Step {
     constructor(content, predicate=null) {
-        this.content = content;
-        this.predicate = predicate;  // Object with an `op` attribute
+        this.content = content;  // Object with an `op` attribute
+        this.predicate = predicate;  // Null or Object with an `op` attribute
     }
 }
 
@@ -311,6 +305,12 @@ const molds = [
     ["Pizza Pan", "Pizza Pans"],
     ["Baking Dish", "Baking Dishes"],
 ];
+const valid_temperatures = [
+    "190C",
+    "425F",
+    "230C",
+    "350F",
+];
 
 class Bowl {
     constructor(kind, id) {
@@ -331,7 +331,7 @@ class Parser {
         this.tokens = tokens;
     }
     complain(token, message) {
-        throw new CompileError(message, token.loc[0], token.loc[1]);
+        throw new CompileError(message, token.loc);
     }
     expect(...kinds) {
         let {value} = this.tokens.next();
@@ -580,12 +580,21 @@ class Parser {
                 break;
             }
             case "add": {
-                const value = this.int_ingredient();
+                const [tok, value] = this.ingredient_impl();
                 this.expect_keyword("into");
                 const [kind, ob] = this.bowl_or_mold();
-                ret = kind == "bowl" ?
-                    {op: OpCodes.ADD_ING_TO_BOWL, bowl: ob}
-                    : {op: OpCodes.MOLD_PUSH_ING, mold: ob};
+                if (kind == "bowl") {
+                    if (typeof value == "string") {
+                        this.complain(
+                            tok,
+                            "can only add string ingredient to molds"
+                        );
+                    }
+                    ret = {op: OpCodes.ADD_ING_TO_BOWL, bowl: ob};
+                }
+                else {
+                    ret = {op: OpCodes.MOLD_PUSH_ING, mold: ob};
+                }
                 ret.ing = value;
                 break;
             }
@@ -654,9 +663,12 @@ class Parser {
             case "place": {
                 const bowl = this.bowl();
                 this.expect_keyword("in the oven and bake at");
-                const temp = this.expect(TokenKind.TEMPERATURE);
-                // TODO verify temperature is valid
-                ret = {op: OpCodes.BAKE, bowl: bowl, temperature: temp.value};
+                const temp_tok = this.expect(TokenKind.TEMPERATURE);
+                const t = temp_tok.value;
+                if (!valid_temperatures.includes(t)) {
+                    this.complain(temp_tok, `our oven can't be set to ${t}!`);
+                }
+                ret = {op: OpCodes.BAKE, bowl: bowl, temperature: t};
                 break;
             }
             case "serves": {
@@ -693,7 +705,6 @@ class Parser {
                 ret = {op: OpCodes.SERVE_WITH, recipe: recipe};
                 break;
             }
-            // TODO
             default: {
                 this.complain(tok, `unknown step "${tok.value}"`);
             }
@@ -709,28 +720,302 @@ function parse(tokens) {
     return new Parser(tokens).program();
 }
 
+/*--- The semantic analyzer! ---*/
+
+function semantic_analyze(program) {
+    // Make sure "Muffin" recipe exists
+    // Make sure GO_TO targets are good
+    // Make sure SERVE_WITH recipe is defined
+}
+
+/*--- The code generator! ---*/
+
+class CodeGenerator {
+    constructor(program) {
+        this.recipe_ids = new Map();
+        this.bowl_kind_ids = new Map();
+        this.mold_kind_ids = new Map();
+        this.n_func = "f";
+        this.n_bowls = "b";
+        this.n_molds = "m";
+        this.n_kind = "k";
+        this.n_ip = "i";
+        this.n_new_ip = "I";
+        this.n_err_handler =
+            (caught) => `console.error("Muffin error: " + ${caught});`;
+        this.n_err = "e";
+        this.n_exit_handler =
+            (code) => `process.exit(${code});`;
+        this.n_tmp = "t";
+        this.program = program;
+        let i = 0;
+        for (const name of program.recipes.keys()) {
+            i++;
+            this.recipe_ids.set(name, i);
+        }
+    }
+    main() {
+        const ret = [
+            `const ${this.n_molds} = {};`,
+        ];
+        for (const [name, recipe] of this.program.recipes.entries()) {
+            this.current_recipe = name;
+            ret.push(
+                `function ${this.func(name)}() {`,
+                `const ${this.n_bowls} = {};`,
+                `let ${this.n_ip} = 1;`,
+                `while (${this.n_ip} <= ${recipe.steps.length}) {`,
+                `let ${this.n_new_ip} = null;`,
+                `let ${this.n_tmp};`,
+                `switch (${this.n_ip}) {`,
+            );
+            this.current_step = 0;
+            for (const step of recipe.steps) {
+                this.current_step++;
+                let stmt = this.gen_step(step.content).join("");
+                if (step.predicate != null) {
+                    stmt = this.gen_predicate(step.predicate, stmt).join("");
+                }
+                ret.push(`case ${this.current_step}: ${stmt} break;`);
+            }
+            ret.push(
+                "}",  // end switch
+                `if (${this.n_new_ip} == null) {${this.n_ip}++;}`,
+                `else {${this.n_ip} = ${this.n_new_ip};}`,
+                "}",  // end while
+                "return 0;",  // assumed normal exit
+                "}",  // end function
+            );
+        }
+        const muffin_call = `${this.func("Muffin")}()`;
+        ret.push(
+            `try {${this.n_exit_handler(muffin_call)}}`,
+            `catch (${this.n_err}) {${this.n_err_handler(this.n_err)}}`,
+        )
+        return ret.join("");
+    }
+    func(recipe_name) {
+        return this.n_func + this.recipe_ids.get(recipe_name);
+    }
+    bowl_array(bowl_kind) {
+        let id = this.bowl_kind_ids.get(bowl_kind);
+        if (id == undefined) {
+            id = this.bowl_kind_ids.size;
+            this.bowl_kind_ids.set(bowl_kind, id);
+        }
+        return `${this.n_bowls}.${this.n_kind}${id}`;
+    }
+    mold_array(mold_kind) {
+        let id = this.mold_kind_ids.get(mold_kind);
+        if (id == undefined) {
+            id = this.mold_kind_ids.size;
+            this.mold_kind_ids.set(mold_kind, id);
+        }
+        return `${this.n_molds}.${this.n_kind}${id}`;
+    }
+    acquire_mold_bowl_impl(node, callback, arr_func) {
+        const {kind, id} = node;
+        const arr = this[arr_func](kind);
+        const too_large = `id ${id} too large for "${kind}"`;
+        const not_set_up = `"${kind}" not set up yet`;
+        const item = `${arr}[${id - 1}]`;
+        return (
+            `if (!${arr}) {${this.call_fatal(not_set_up)}}`
+            + (
+                // No need to check index out of bounds for id 1
+                id == 1 ? ""
+                : `else if (${arr}.length < ${id})`
+                + `{${this.call_fatal(too_large)}}`
+            )
+            + `else {${callback(item)}}`
+        );
+    }
+    acquire_mold(node, cb) {
+        return this.acquire_mold_bowl_impl(node, cb, "mold_array");
+    }
+    acquire_bowl(node, cb) {
+        return this.acquire_mold_bowl_impl(node, cb, "bowl_array");
+    }
+    call_fatal(message) {
+        const msg =
+            `"${this.current_recipe}": step ${this.current_step}: ${message}`;
+        return `throw ${JSON.stringify(msg)};`;
+    }
+    gen_step(x) {
+        // `x` is step content (an Object with an `op` attribute)
+        let t1;
+        let t2;
+        switch (x.op) {
+        case OpCodes.SET_UP_BOWL:
+            t1 = this.bowl_array(x.bowl_kind);
+            t2 = `bowl kind "${x.bowl_kind}" already set up`;
+            return [
+                `if (${t1}) {${this.call_fatal(t2)}}`,
+                `else {${t1} = new Array(${x.num}).fill(0);}`,
+            ];
+        case OpCodes.SET_UP_MOLD:
+            t1 = this.mold_array(x.mold_kind);
+            t2 = `mold kind "${x.mold_kind}" already set up`;
+            return [
+                `if (${t1}) {${this.call_fatal(t2)}}`,
+                "else {",
+                `${t1} = new Array(${x.num});`,
+                `for (let i = 0; i < ${x.num}; i++) {${t1}[i] = [];}`,
+                "}",
+            ];
+        case OpCodes.ADD_ING_TO_BOWL:
+            return [
+                this.acquire_bowl(x.bowl, (b) => `${b} += ${x.ing};`),
+            ];
+        case OpCodes.REMOVE_ING_FROM_BOWL:
+            return [
+                this.acquire_bowl(
+                    x.bowl, (b) => `${b} -= Math.min(${b}, ${x.ing});`
+                ),
+            ];
+        case OpCodes.CLEAN_BOWL:
+            return [
+                this.acquire_bowl(x.bowl, (b) => `${b} = 0;`),
+            ];
+        case OpCodes.ADD_WATER_TO_BOWL:
+            return [
+                this.acquire_bowl(x.bowl, (b) => `${b} *= ${x.num + 1};`),
+            ];
+        case OpCodes.TRANSFER_HALF:
+            return [
+                this.acquire_bowl(x.bowl1, (b1) => this.acquire_bowl(
+                    x.bowl2, (b2) =>
+                        `${this.n_tmp} = Math.floor(${b1} / 2);`
+                        + `${b1} -= ${this.n_tmp}; ${b2} += ${this.n_tmp};`
+                )),
+            ];
+        case OpCodes.TRANSFER_ALL:
+            return [
+                this.acquire_bowl(x.bowl1, (b1) => this.acquire_bowl(
+                    x.bowl2, (b2) => `${b2} += ${b1}; ${b1} = 0;`
+                )),
+            ];
+        case OpCodes.GO_TO:
+            return [
+                `${this.n_new_ip} = ${x.step};`,
+            ]
+        case OpCodes.BAKE:
+            return [
+                this.acquire_bowl(x.bowl, (b) => {
+                    switch (x.temperature) {
+                    case "190C":
+                        return `console.log(${b});`;
+                    case "425F":
+                        return (
+                            `if (${b} >= 0x110000) `
+                            // TODO log the code point
+                            + `{${this.call_fatal("invalid code point")}}`
+                            + "else {process.stdout.write(String.fromCodePoint"
+                            + `(${b}));}`
+                        )
+                    case "230C":
+                    case "350F":
+                        return "/* TBD */";
+                    }
+                }),
+            ]
+        case OpCodes.SERVES:
+            return [
+                `return ${x.num - 1};`,
+            ]
+        case OpCodes.MOLD_PUSH_BOWL:
+            return [
+                this.acquire_bowl(x.bowl, (b) => this.acquire_mold(
+                    x.mold, (m) => `${b}.push(${m});`
+                )),
+            ]
+        case OpCodes.MOLD_POP:
+            t1 = "cannot pop from empty mold";
+            return [
+                this.acquire_mold(x.mold, (m) =>
+                    `if (${m}.pop() == undefined) {${this.call_fatal(t1)}}`
+                ),
+            ]
+        case OpCodes.MOLD_POP_AND_STORE:
+            t1 = "cannot pop from empty mold";
+            t2 = "cannot store string value into bowl";
+            return [
+                this.acquire_mold(x.mold, (m) => this.acquire_bowl(
+                    x.bowl, (b) => `${this.n_tmp} = ${m}.pop();`
+                        + `if (${this.n_tmp} == undefined)`
+                        + `{${this.call_fatal(t1)}}`
+                        + `else if (typeof ${this.n_tmp} == "string")`
+                        + `{${this.call_fatal(t2)}}`
+                        + `else {${b} = ${this.n_tmp};}`
+                )),
+            ]
+        case OpCodes.MICROWAVE:
+            t1 = "cannot microwave empty mold";
+            return [
+                this.acquire_mold(x.mold, (m) =>
+                    `if (!${m}.length) {${this.call_fatal(t1)}}`
+                    + `else {console.log(${m}[${m}.length - 1]);}`
+                ),
+            ]
+        case OpCodes.MOLD_PUSH_ING:
+            return [
+                this.acquire_mold(x.mold, (m) =>
+                    `${m}.push(${JSON.stringify(x.ing)});`
+                ),
+            ]
+        case OpCodes.SERVE_WITH:
+            return [
+                `${this.func(x.recipe)}();`
+            ]
+        default:
+            throw new Error(`Op code ${x.op} not supported yet`);
+        }
+    }
+    gen_predicate(x, inner) {
+        // `x` is predicate (an Object with an `op` attribute)
+        // `inner` is code to execute if `x` is true (a string)
+        switch (x.op) {
+        case PredicateKind.MOLD_IS_EMPTY:
+            return [
+                this.acquire_mold(x.mold, (m) =>
+                    `if (!${m}.length) {${inner}}`
+                ),
+            ]
+        case PredicateKind.MOLD_NOT_EMPTY:
+            return [
+                this.acquire_mold(x.mold, (m) =>
+                    `if (${m}.length) {${inner}}`
+                ),
+            ]
+        case PredicateKind.BOWL_IS_EMPTY:
+            return [
+                this.acquire_bowl(x.bowl, (m) => `if (!${m}) {${inner}}`),
+            ]
+        case PredicateKind.BOWL_NOT_EMPTY:
+            return [
+                this.acquire_bowl(x.bowl, (m) => `if (${m}) {${inner}}`),
+            ]
+        default:
+            throw new Error(`Predicate code ${x.op} not supported yet`);
+        }
+    }
+}
+
+function code_gen(program) {
+    return new CodeGenerator(program).main();
+}
+
 const prog = parse(tokenize(
 `
 Muffin recipe
 ingredients
-    1 Blueberry
-    20 grams of Butter
+    "Hello, world!" brand Flour
 method
-    1. set up 4 Bowls
-    2. add Blueberry into 3rd Bowl
-    3. add water to 1st Bowl at a 1:1 ratio
-    4. pour half of contents of 1st Bowl into 4th Bowl
-    5. remove Butter from 4th Bowl
-    6. if 4th Bowl is empty, proceed to step 15
-    7. place 3rd Bowl in the oven and bake at 190C
-    8. clean 4th Bowl
-    9. pour contents of 2nd Bowl into 4th Bowl
-    10. add water to 3rd Bowl at a 1:1 ratio
-    11. pour half of contents of 3rd Bowl into 2nd Bowl
-    12. pour contents of 4th Bowl into 3rd Bowl
-    13. add Blueberry into 1st Bowl
-    14. go back to step 3
-    15. serves 1
+    1. set up a Muffin Cup
+    2. add Flour into Muffin Cup
+    3. microwave Muffin Cup
+    4. serves 1
 `
 ));
 console.dir(prog, {depth: null});
+console.log(code_gen(prog));

@@ -29,14 +29,14 @@ This program prints out the first 20 Fibonacci numbers:
 Muffin recipe
 ingredients
     1 Blueberry
-    20 grams of Butter
+    19 grams of Butter
 method
     1. set up 4 Bowls
     2. add Blueberry into 3rd Bowl
     3. add water to 1st Bowl at a 1:1 ratio
     4. pour half of contents of 1st Bowl into 4th Bowl
     5. remove Butter from 4th Bowl
-    6. if 4th Bowl is empty, proceed to step 15
+    6. if 4th Bowl is not empty, proceed to step 15
     7. place 3rd Bowl in the oven and bake at 190C
     8. clean 4th Bowl
     9. pour contents of 2nd Bowl into 4th Bowl
@@ -209,7 +209,8 @@ takes one of these forms:
   `<Integer>` times of itself. `<Integer>` must be positive. For example,
   a `1:1` ratio doubles the `<Bowl>`.
 * `pour half of contents of <Bowl> into <Bowl>`: Transfer half of value of
-  first `<Bowl>` into second `<Bowl>`.
+  first `<Bowl>` into second `<Bowl>`. If first `<Bowl>` is an odd number, then
+  "half" always rounds down.
 * `pour contents of <Bowl> into <Bowl>`: Transfer all contents of first
   `<Bowl>` into second `<Bowl>`. In other words, second `<Bowl>` gets added the
   value of first `<Bowl>` and the first `<Bowl>` is cleaned.
@@ -233,6 +234,9 @@ takes one of these forms:
 * `serves <Integer>`: Terminate the recipe. If this is used in the `Muffin`
   recipe, `<Integer> - 1` will be the exit code. So `serves 1` means a normal
   exit.
+
+  If the `Muffin` recipe finishes because the last step is done and we didn't
+  jump back, then an exit code of 0 (normal exit) is assumed.
 * `add <Ingredient name> into <Mold>`: Push the integer or string constant
   specified by `<Ingredient name>` onto `<Mold>`.
 * `pour contents of <Bowl> into <Mold>`: Push the value of `<Bowl>` onto
