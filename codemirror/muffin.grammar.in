@@ -1,0 +1,81 @@
+@top Program {
+    Newline? recipe*
+}
+
+@skip {
+    WS
+}
+
+known_keyword[@name=MiscKeyword] {
+    %misc_keywords%
+}
+
+kw<term> { @specialize[@name=SpecialKeyword]<Keyword, term> }
+
+known_identifier[@name=KnownIdentifier] {
+    %identifiers%
+}
+
+step_content {
+    String
+    | Number
+    | Operators
+    | known_keyword
+    | known_identifier
+    | Keyword
+    | Identifier
+}
+
+recipe_name[@name=RecipeName] {
+    (Identifier | known_identifier)+
+}
+
+ingredient_body[@name=IngredientBody] {
+    kw<"ingredients"> Newline ingredient*
+}
+
+step_body[@name=StepBody] {
+    kw<"method"> Newline step*
+}
+
+recipe[@name=RecipeDef] {
+    recipe_name kw<"recipe"> Newline
+    ingredient_body
+    step_body
+}
+
+ingredient_name[@name=IngredientName] {
+    Identifier+
+}
+
+ingredient {
+    (Number | String) (known_keyword | Keyword)* ingredient_name Newline
+}
+
+step {
+    Number step_content* Newline
+}
+
+@tokens {
+    WS {
+        $[ \t]+
+    }
+    Newline {
+        $[\n]+ | @eof
+    }
+    String {
+        '"' !["\n]* '"'
+    }
+    Number {
+        @digit+ ($[CF.] | %ordinal%)?
+    }
+    Operators {
+        %operators%
+    }
+    Keyword {
+        @asciiLowercase $[a-zA-Z0-9_]*
+    }
+    Identifier {
+        @asciiUppercase $[a-zA-Z0-9_]*
+    }
+}

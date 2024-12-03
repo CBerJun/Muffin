@@ -1,0 +1,74 @@
+body {
+    --body-margin-y: 4px;
+    background-color: black;
+    font-family: Consolas, monaco, monospace;
+    color: white;
+    margin-top: var(--body-margin-y);
+    margin-bottom: var(--body-margin-y);
+    margin-left: 0.75em;
+    margin-right: 0.75em;
+    padding: 0;
+}
+
+div#body-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 2 * var(--body-margin-y));
+}
+
+div#demo-body {
+    flex-grow: 1;
+    display: flex;
+}
+
+div#body-left {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+}
+
+div#body-right {
+    width: 50%;
+}
+
+h1#title {
+    font-size: 20px;
+}
+
+div#code-wrapper {
+    position: relative;
+    height: 100%;
+}
+
+div#code {
+    position: absolute;
+    overflow-y: auto;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border: solid 1px rgb(84, 87, 89);
+}
+
+.cm-editor {
+    height: 100%;
+}
+
+.cm-search button[name="close"] {
+    color: white;
+}
+
+p#copyright {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+a {
+    color: rgb(35, 182, 255);
+}
+a:visited {
+    color: rgb(140, 140, 237);
+}
+a:hover {
+    color: rgb(0, 200, 255);
+}
