@@ -280,12 +280,35 @@ Muffin is:
 
 * **Technical**: I really designed this programming language and implemented
   it myself. The compiler works like most compilers in the world -- tokenizer
-  (lexer), parser, and code generator.
+  (lexer), parser, and code generator. The frontend editor is powered by
+  [CodeMirror 6](code-mirror). I added the autocompletion, parsing (syntax
+  highlighting) and auto-indentation logic. The build script of the frontend is
+  written in Python.
 * **Creative**: Write tasty programs that look like recipes!
 * **Educational**: If you haven't heard of esolangs before, Muffin will be the
   first one!
-* **Presented well**: Muffin has a demo site and you can try it out yourself.
-  And look at this descriptive README file!
+* **Presented well**: Muffin has a demo website and you can try it out
+  yourself. And look at this descriptive README file!
+
+[code-mirror]: https://codemirror.net/
+
+## How do I build your demo website locally?
+
+Dependencies:
+
+* [Node.js](https://nodejs.org/en)
+* [Python](https://www.python.org/) 3.6 or above
+
+Follow these steps:
+
+1. Run `npm install` under the `codemirror/` directory. This requires network
+   connection.
+2. Go back to the project root and use Python to execute the build script
+   `build.py`. Depending on your platform, it's either `python build.py` or
+   `python3 build.py`.
+3. The website is now ready under `src/` directory. We just need to serve the
+   contents. Using Python, you can do this by `python -m http.server -d src/`.
+4. Now go to `localhost:8000` in your browser. The website should be there.
 
 ## How did you come up with this idea?
 
