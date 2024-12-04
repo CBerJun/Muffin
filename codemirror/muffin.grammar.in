@@ -45,7 +45,7 @@ recipe[@name=RecipeDef] {
 }
 
 ingredient_name[@name=IngredientName] {
-    Identifier+
+    (Identifier | known_identifier)+
 }
 
 ingredient {
