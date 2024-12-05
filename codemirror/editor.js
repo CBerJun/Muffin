@@ -119,6 +119,7 @@ export function createEditorState(initialContents) {
             ...completionKeymap,
         ]),
         muffin(),
+        EditorView.theme({".cm-scroller": {fontFamily: "inherit"}}),
         oneDark,
     ];
 
