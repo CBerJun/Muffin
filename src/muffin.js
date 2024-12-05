@@ -1005,17 +1005,11 @@ function code_gen(program) {
     return new CodeGenerator(program).main();
 }
 
-const prog = parse(tokenize(
-`
-Muffin recipe
-ingredients
-    "Hello, world!" brand Flour
-method
-    1. set up a Muffin Cup
-    2. add Flour into Muffin Cup
-    3. microwave Muffin Cup
-    4. serves 1
-`
-));
-console.dir(prog, {depth: null});
-console.log(code_gen(prog));
+export function compile(code) {
+    /**
+     * @param {string} code The Muffin code to compile.
+     * @returns {string} The generated JavaScript code.
+     * @throws {CompileError}
+     */
+    return code_gen(parse(tokenize(code)));
+}
