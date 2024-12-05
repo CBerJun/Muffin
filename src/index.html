@@ -5,8 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Muffin!</title>
         <link rel="stylesheet" href="muffin.css">
-        <script src="frontend.js"></script>
-        <script src="cm6.bundle.min.js"></script>
+        <script defer src="muffin.bundle.min.js"></script>
     </head>
     <body>
         <div id="body-wrapper">
@@ -34,7 +33,7 @@
                     <div id="toolbar">
                         <button
                             id="run" type="button" class="can-run"
-                            onclick="muffin.run()"
+                            onclick="muffin.runButton()"
                         >
                             Run
                             <svg width="12" height="14" viewBox="8 4 10 16"

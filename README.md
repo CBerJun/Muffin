@@ -301,13 +301,13 @@ Dependencies:
 
 Follow these steps:
 
-1. Run `npm install` under the `codemirror/` directory. This requires network
+1. Run `npm install` under the `src/` directory. This requires network
    connection.
 2. Go back to the project root and use Python to execute the build script
    `build.py`. Depending on your platform, it's either `python build.py` or
    `python3 build.py`.
-3. The website is now ready under `src/` directory. We just need to serve the
-   contents. Using Python, you can do this by `python -m http.server -d src/`.
+3. The website is now ready under `dist/` directory. We just need to serve the
+   contents. Using Python, you can do this by `python -m http.server -d dist/`.
 4. Now go to `localhost:8000` in your browser. The website should be there.
 
 ## How did you come up with this idea?

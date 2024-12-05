@@ -4,10 +4,8 @@ node_modules/
 # My secret notes
 /BRAINSTORM.txt
 
-# Generated files
-/codemirror/muffin.grammar
-/codemirror/parser.js
-/codemirror/parser.terms.js
-/codemirror/autocomplete.js
-/src/cm6.bundle.js
-/src/cm6.bundle.min.js
+# Generated contents
+/build
+/dist
+/src/parser.js
+/src/autocomplete.js

@@ -1,3 +1,5 @@
+import * as cm6 from "./editor.js";
+
 const preset_code = `Muffin recipe
 ingredients
     "Hello, world!" brand Flour
@@ -17,9 +19,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
     });
 });
 
-var muffin = {
-    run() {
-        /* Callback from button#run. */
-        const button = document.getElementById("run");
-    }
-};
+export function runButton() {
+    /* Callback from button#run. */
+    const button = document.getElementById("run");
+}
