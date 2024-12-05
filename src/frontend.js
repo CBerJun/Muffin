@@ -16,3 +16,10 @@ document.addEventListener("DOMContentLoaded", (event) => {
         state: initialState,
     });
 });
+
+var muffin = {
+    run() {
+        /* Callback from button#run. */
+        const button = document.getElementById("run");
+    }
+};

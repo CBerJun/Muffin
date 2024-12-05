@@ -73,8 +73,7 @@ button#run {
     font-family: inherit;
     font-size: 20px;
     color: white;
-    background-color: #008024;
-    border: 1px solid #01b328;
+    border: 1px solid;
     border-radius: 2px;
     cursor: pointer;
 }
@@ -83,8 +82,20 @@ button#run svg {
     fill: white;
 }
 
-button#run:hover {
+button#run.can-run {
+    background-color: #008024;
+    border-color: #01b328;
+}
+button#run.can-run:hover {
     background-color: #019927;
+}
+
+button#run.can-stop {
+    background-color: #800000;
+    border-color: #b30101;
+}
+button#run.can-stop:hover {
+    background-color: #990101;
 }
 
 p {
