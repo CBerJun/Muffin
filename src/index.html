@@ -11,12 +11,18 @@
     <body>
         <div id="body-wrapper">
             <h1 id="title">The Muffin Programming Language</h1>
+            <p id="description" class="fine-print">
+                A programming language I made that allows you to write programs
+                that look like cooking recipes. Check out the
+                <a href="https://github.com/CBerJun/Muffin">README file</a>
+                for details!
+            </p>
             <div id="demo-body">
                 <div id="body-left">
                     <div id="code-wrapper">
                         <div id="code"></div>
                     </div>
-                    <p id="copyright">
+                    <p id="copyright" class="fine-print">
                         Muffin is completely open-source! Check out the
                         <a href="https://github.com/CBerJun/Muffin">repo</a>!
                         <br>
@@ -24,7 +30,17 @@
                         <a href="https://codemirror.net/">CodeMirror</a>.
                     </p>
                 </div>
-                <div id="body-right"></div>
+                <div id="body-right">
+                    <div id="toolbar">
+                        <button id="run" type="button">
+                            Run
+                            <svg width="12" height="14" viewBox="8 4 10 16"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path d="M8 5v14l11-7z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </body>

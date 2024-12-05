@@ -3,10 +3,7 @@ body {
     background-color: black;
     font-family: Consolas, monaco, monospace;
     color: white;
-    margin-top: var(--body-margin-y);
-    margin-bottom: var(--body-margin-y);
-    margin-left: 0.75em;
-    margin-right: 0.75em;
+    margin: var(--body-margin-y) 0.75em;
     padding: 0;
 }
 
@@ -21,18 +18,24 @@ div#demo-body {
     display: flex;
 }
 
-div#body-left {
+div#body-left,
+div#body-right {
     width: 50%;
     display: flex;
     flex-direction: column;
-}
-
-div#body-right {
-    width: 50%;
+    padding: 0 0.5em;
 }
 
 h1#title {
     font-size: 20px;
+    text-align: center;
+    margin-top: 0.4em;
+    margin-bottom: 0;
+}
+
+p#description {
+    text-align: center;
+    margin-top: 0.4em;
 }
 
 div#code-wrapper {
@@ -48,6 +51,7 @@ div#code {
     left: 0;
     right: 0;
     border: solid 1px rgb(84, 87, 89);
+    font-size: 14px;
 }
 
 .cm-editor {
@@ -58,7 +62,32 @@ div#code {
     color: white;
 }
 
-p#copyright {
+div#toolbar {
+    display: flex;
+}
+
+button#run {
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+    font-family: inherit;
+    font-size: 20px;
+    color: white;
+    background-color: #008024;
+    border: 1px solid #01b328;
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+button#run svg {
+    fill: white;
+}
+
+button#run:hover {
+    background-color: #019927;
+}
+
+p {
     margin-top: 0.5em;
     margin-bottom: 0.5em;
 }
@@ -71,4 +100,8 @@ a:visited {
 }
 a:hover {
     color: rgb(0, 200, 255);
+}
+
+p.fine-print {
+    font-size: 14px;
 }
