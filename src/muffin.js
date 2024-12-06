@@ -284,7 +284,8 @@ class Step {
 
 function or_list(arr) {
     return arr.length == 1 ? arr[0]
-        : arr.slice(0, -2).join(', ') + `${arr[-2]} or ${kinds[-1]}`;
+        : arr.length == 2 ? arr.join(' or ')
+        : arr.slice(0, -1).join(', ') + ' or ' + arr.slice(-1);
 }
 
 const measures = [
