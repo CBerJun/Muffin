@@ -161,6 +161,7 @@ def build_autocomplete():
 @builder("build/muffin.bundle.js", [
     "src/frontend.js",
     "src/editor.js",
+    "src/muffin.js",
     "src/parser.js",
     "src/autocomplete.js",
 ])
