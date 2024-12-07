@@ -32,14 +32,46 @@
                 <div id="body-right">
                     <div id="toolbar">
                         <button
-                            id="run" type="button" class="can-run"
-                            onclick="muffin.runButton()"
+                            id="run" type="button"
+                            onclick="muffin.onRunButtonClicked()"
                         >
-                            Run
+                            <span id="run-text"></span>
                             <svg width="12" height="14" viewBox="8 4 10 16"
-                                xmlns="http://www.w3.org/2000/svg">
+                                xmlns="http://www.w3.org/2000/svg"
+                                id="run-icon">
                                 <path d="M8 5v14l11-7z"></path>
                             </svg>
+                            <svg width="12" height="15"
+                                xmlns="http://www.w3.org/2000/svg"
+                                id="stop-icon">
+                                <path d="M1 1v13h3v-13z M7 1v13h3v-13h-3">
+                                </path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="execution-wrapper">
+                        <p id="execution">
+                            <span class="exec-info">
+                                Welcome to Muffin's online compiler!
+                                <br>
+                                <br>
+                                Write your code (recipe) using the editor on
+                                the left, and click the Run button to run it!
+                                <br>
+                                A Hello, world! example has been loaded in the
+                                editor.
+                            </span>
+                        </p>
+                    </div>
+                    <div id="input-bar">
+                        <input id="input-line" type="text"
+                            placeholder="Send text to stdin..."
+                            autocapitalize="off" autocomplete="off">
+                        <button
+                            id="send" type="button"
+                            onclick="muffin.onSendButtonClicked()"
+                        >
+                            Send
                         </button>
                     </div>
                 </div>

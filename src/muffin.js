@@ -20,17 +20,19 @@ const TokenNames = Object.fromEntries(
 );
 
 class Token {
-    constructor(kind, loc, value=null) {
+    constructor(kind, loc, char_index, value=null) {
         this.kind = kind;
         this.value = value;
         this.loc = loc;
+        this.char_index = char_index;
     }
 };
 
-class CompileError {
-    constructor(message, loc) {
+export class CompileError {
+    constructor(message, loc, char_index) {
         this.message = message;
         this.loc = loc;  // [line_no, col_no] or null
+        this.char_index = char_index;  // number or null
     }
     format() {
         if (this.loc == null) {
@@ -77,6 +79,14 @@ const operators = new Map([
     [":", TokenKind.COLON],
 ])
 
+class TokenizerState {
+    constructor(line_no, col_no, char_index) {
+        this.line_no = line_no;
+        this.col_no = col_no;
+        this.char_index = char_index;
+    }
+}
+
 class Tokenizer {
     constructor(str) {
         this.str = str;
@@ -93,9 +103,12 @@ class Tokenizer {
         this.col_no += chars;
         this.c = this.str[this.ptr - 1];
     }
-    complain(message, col_no=null) {
+    complain(message, state=null) {
+        if (state == null) {
+            state = this.export_state();
+        }
         throw new CompileError(
-            message, [this.line_no, col_no == null ? this.col_no : col_no]
+            message, [state.line_no, state.col_no], state.char_index
         );
     }
     skip_ws() {
@@ -107,8 +120,16 @@ class Tokenizer {
         regex.lastIndex = this.ptr - 1;
         return regex.exec(this.str);
     }
-    make_token(kind, value=null) {
-        return new Token(kind, [this.line_no, this.col_no], value);
+    export_state() {
+        return new TokenizerState(this.line_no, this.col_no, this.ptr - 1);
+    }
+    make_token(kind, value=null, state=null) {
+        if (state == null) {
+            state = this.export_state();
+        }
+        return new Token(
+            kind, [state.line_no, state.col_no], state.char_index, value
+        );
     }
     parse_line() {
         const res = [];
@@ -121,7 +142,7 @@ class Tokenizer {
             const number_result = this.regex_match(digit);
             let word_result = this.regex_match(word);
             if (number_result) {
-                const loc = [this.line_no, this.col_no];
+                const state = this.export_state();
                 const match = number_result[0];
                 this.advance2(match.length);
                 const number = parseInt(match);
@@ -130,20 +151,23 @@ class Tokenizer {
                 const num_suffix_result = this.regex_match(num_suffix);
                 const suffix_match = num_suffix_result[0];
                 if (suffix_match == '.') {
-                    res.push(new Token(TokenKind.NUMBER_PERIOD, loc, number));
+                    res.push(this.make_token(
+                        TokenKind.NUMBER_PERIOD, number, state
+                    ));
                 }
                 else if (suffix_match == 'C' || suffix_match == 'F') {
-                    res.push(new Token(
-                        TokenKind.TEMPERATURE, loc,
-                        number + suffix_match
+                    res.push(this.make_token(
+                        TokenKind.TEMPERATURE, number + suffix_match, state
                     ));
                 }
                 else if (ordinal_suffixes.includes(suffix_match)) {
                     // TODO make sure suffix is correct
-                    res.push(new Token(TokenKind.ORDINAL, loc, number));
+                    res.push(this.make_token(
+                        TokenKind.ORDINAL, number, state
+                    ));
                 }
                 else if (suffix_match.length == 0) {
-                    res.push(new Token(TokenKind.NUMBER, loc, number));
+                    res.push(this.make_token(TokenKind.NUMBER, number, state));
                 }
                 else {
                     this.complain(`unknown number suffix ${suffix_match}`);
@@ -152,8 +176,7 @@ class Tokenizer {
             }
             else if (word_result) {
                 // Phrase
-                const start_col = this.col_no;
-                const loc = [this.line_no, this.col_no];
+                const state = this.export_state();
                 const first_char = word_result[0][0];
                 const is_kw = first_char.toLowerCase() == first_char;
                 const word2 = is_kw ? /[a-z]\w*/y : /[A-Z]\w*/y;
@@ -168,33 +191,35 @@ class Tokenizer {
                 const phrase = word_list.join(' ');
                 if (is_kw) {
                     if (key_phrases.has(phrase)) {
-                        res.push(new Token(TokenKind.KEY_PHRASE, loc, phrase));
+                        res.push(this.make_token(
+                            TokenKind.KEY_PHRASE, phrase, state
+                        ));
                     }
                     else {
                         this.complain(
                             `unknown key phrase "${phrase}"; identifiers must `
-                            + `be Title Case`, start_col
+                            + `be Title Case`, state
                         );
                     }
                 }
                 else {
-                    res.push(new Token(TokenKind.PHRASE, loc, phrase));
+                    res.push(this.make_token(TokenKind.PHRASE, phrase, state));
                 }
             }
             else if (this.c == '"') {
                 // String
-                const start_col = this.col_no;
-                const start_ptr = this.ptr;
+                const state = this.export_state();
                 this.advance();
                 while (this.c != '"') {
                     if (this.c == '\n' || this.c == undefined) {
-                        this.complain("unterminated string", start_col);
+                        this.complain("unterminated string", state);
                     }
                     this.advance();
                 }
-                res.push(new Token(
-                    TokenKind.STRING, [this.line_no, start_col],
-                    this.str.slice(start_ptr, this.ptr - 1)
+                res.push(this.make_token(
+                    TokenKind.STRING,
+                    this.str.slice(state.char_index + 1, this.ptr - 1),
+                    state
                 ));
                 this.advance();
             }
@@ -332,7 +357,7 @@ class Parser {
         this.tokens = tokens;
     }
     complain(token, message) {
-        throw new CompileError(message, token.loc);
+        throw new CompileError(message, token.loc, token.char_index);
     }
     expect(...kinds) {
         let {value} = this.tokens.next();
@@ -731,22 +756,86 @@ function semantic_analyze(program) {
 
 /*--- The code generator! ---*/
 
+export class CodeGenConfig {
+    constructor(owner) {
+        this.owner = owner;
+        this.loop_prolog = "";
+        this.loop_epilog = "";
+        this.func_prolog = "";
+        this.teardown = "";
+        // Await works iff this is set:
+        this.asynchronous = false;
+    }
+    handle_error(error) {
+        throw new Error("not implemented");
+    }
+    handle_exit(code) {
+        throw new Error("not implemented");
+    }
+    handle_println(object) {
+        throw new Error("not implemented");
+    }
+    handle_print(object) {
+        throw new Error("not implemented");
+    }
+    at_last(code) {
+        return code;
+    }
+}
+
+export class NodeConfig extends CodeGenConfig {
+    constructor(owner) {
+        super(owner);
+        this.readline_needed = false;
+        // When readline is used this must be set:
+        this.asynchronous = true;
+    }
+    handle_error(error) {
+        return `console.error("Muffin error: " + ${error});`;
+    }
+    handle_exit(code) {
+        return `process.exit(${code});`;
+    }
+    handle_println(object) {
+        return `console.log(${object});`;
+    }
+    handle_print(object) {
+        return `process.stdout.write(${object});`;
+    }
+    handle_read_line() {
+        this.readline_needed = true;
+        this.teardown = "rl.close();";
+        return `await LL()`;
+    }
+    at_last(code) {
+        if (this.readline_needed) {
+            return (
+                "import * as readline from 'node:readline';"
+                + "import {stdin, stdout} from 'node:process';"
+                + "const rl = readline.createInterface({input: stdin"
+                + ", output: stdout});"
+                + "function LL() {return new Promise((r) => "
+                + "rl.question('', r));}"
+                + code
+            );
+        }
+        return code;
+    }
+}
+
 class CodeGenerator {
-    constructor(program) {
+    constructor(program, config_cls) {
         this.recipe_ids = new Map();
         this.bowl_kind_ids = new Map();
         this.mold_kind_ids = new Map();
+        this.config = new config_cls(this);
         this.n_func = "f";
         this.n_bowls = "b";
         this.n_molds = "m";
         this.n_kind = "k";
         this.n_ip = "i";
         this.n_new_ip = "I";
-        this.n_err_handler =
-            (caught) => `console.error("Muffin error: " + ${caught});`;
         this.n_err = "e";
-        this.n_exit_handler =
-            (code) => `process.exit(${code});`;
         this.n_tmp = "t";
         this.program = program;
         let i = 0;
@@ -762,12 +851,15 @@ class CodeGenerator {
         for (const [name, recipe] of this.program.recipes.entries()) {
             this.current_recipe = name;
             ret.push(
+                this.config.asynchronous ? "async " : "",
                 `function ${this.func(name)}() {`,
                 `const ${this.n_bowls} = {};`,
                 `let ${this.n_ip} = 1;`,
+                this.config.func_prolog,
                 `while (${this.n_ip} <= ${recipe.steps.length}) {`,
                 `let ${this.n_new_ip} = null;`,
                 `let ${this.n_tmp};`,
+                this.config.loop_prolog,
                 `switch (${this.n_ip}) {`,
             );
             this.current_step = 0;
@@ -781,6 +873,7 @@ class CodeGenerator {
             }
             ret.push(
                 "}",  // end switch
+                this.config.loop_epilog,
                 `if (${this.n_new_ip} == null) {${this.n_ip}++;}`,
                 `else {${this.n_ip} = ${this.n_new_ip};}`,
                 "}",  // end while
@@ -788,15 +881,23 @@ class CodeGenerator {
                 "}",  // end function
             );
         }
-        const muffin_call = `${this.func("Muffin")}()`;
         ret.push(
-            `try {${this.n_exit_handler(muffin_call)}}`,
-            `catch (${this.n_err}) {${this.n_err_handler(this.n_err)}}`,
-        )
-        return ret.join("");
+            `try {${this.config.handle_exit(this.call_func("Muffin"))}}`,
+            `catch (${this.n_err}) {${this.config.handle_error(this.n_err)}}`,
+        );
+        if (this.config.teardown) {
+            ret.push(`finally {${this.config.teardown}}`);
+        }
+        return this.config.at_last(ret.join(""));
     }
     func(recipe_name) {
         return this.n_func + this.recipe_ids.get(recipe_name);
+    }
+    call_func(recipe_name) {
+        return (
+            (this.config.asynchronous ? "await " : "")
+            + `${this.func(recipe_name)}()`
+        );
     }
     bowl_array(bowl_kind) {
         let id = this.bowl_kind_ids.get(bowl_kind);
@@ -901,25 +1002,39 @@ class CodeGenerator {
                 `${this.n_new_ip} = ${x.step};`,
             ]
         case OpCodes.BAKE:
-            return [
-                this.acquire_bowl(x.bowl, (b) => {
-                    switch (x.temperature) {
-                    case "190C":
-                        return `console.log(${b});`;
-                    case "425F":
-                        return (
-                            `if (${b} >= 0x110000) `
-                            // TODO log the code point
-                            + `{${this.call_fatal("invalid code point")}}`
-                            + "else {process.stdout.write(String.fromCodePoint"
-                            + `(${b}));}`
-                        )
-                    case "230C":
-                    case "350F":
-                        return "/* TBD */";
-                    }
-                }),
-            ]
+            return [this.acquire_bowl(x.bowl, (b) => {
+                switch (x.temperature) {
+                case "190C":
+                    return this.config.handle_println(b);
+                case "425F":
+                    const object = `String.fromCodePoint(${b})`;
+                    return [
+                        `if (${b} >= 0x110000) `,
+                        // TODO log the code point
+                        `{${this.call_fatal("invalid code point")}}`,
+                        `else {${this.config.handle_print(object)}}`,
+                    ].join("");
+                case "230C": {
+                    const x = this.config.handle_read_line();
+                    const m1 = "input line is not a single integer";
+                    return [
+                        `${this.n_tmp} = parseInt(${x}, 10);`,
+                        `if (isNaN(${this.n_tmp})) {${this.call_fatal(m1)}}`,
+                        `else {${b} = ${this.n_tmp};}`,
+                    ].join("");
+                }
+                case "350F": {
+                    const x = this.config.handle_read_line();
+                    const m1 = "input line is not a single character";
+                    return [
+                        `${this.n_tmp} = ${x};`,
+                        `if (${this.n_tmp}.length != 1)`,
+                        `{${this.call_fatal(m1)}}`,
+                        `else {${b} = ${this.n_tmp}.codePointAt(0);}`,
+                    ].join("");
+                }
+                }
+            })];
         case OpCodes.SERVES:
             return [
                 `return ${x.num - 1};`,
@@ -953,10 +1068,13 @@ class CodeGenerator {
         case OpCodes.MICROWAVE:
             t1 = "cannot microwave empty mold";
             return [
-                this.acquire_mold(x.mold, (m) =>
-                    `if (!${m}.length) {${this.call_fatal(t1)}}`
-                    + `else {console.log(${m}[${m}.length - 1]);}`
-                ),
+                this.acquire_mold(x.mold, (m) => {
+                    const object = `${m}[${m}.length - 1]`;
+                    return (
+                        `if (!${m}.length) {${this.call_fatal(t1)}}`
+                        + `else {${this.config.handle_println(object)}}`
+                    );
+                }),
             ]
         case OpCodes.MOLD_PUSH_ING:
             return [
@@ -966,7 +1084,7 @@ class CodeGenerator {
             ]
         case OpCodes.SERVE_WITH:
             return [
-                `${this.func(x.recipe)}();`
+                `${this.call_func(x.recipe)};`
             ]
         default:
             throw new Error(`Op code ${x.op} not supported yet`);
@@ -1002,15 +1120,18 @@ class CodeGenerator {
     }
 }
 
-function code_gen(program) {
-    return new CodeGenerator(program).main();
+function code_gen(program, config_cls) {
+    return new CodeGenerator(program, config_cls).main();
 }
 
-export function compile(code) {
+/*--- Everything combined! ---*/
+
+export function compile(code, config_cls) {
     /**
      * @param {string} code The Muffin code to compile.
+     * @param {typeof CodeGenConfig} config_cls
      * @returns {string} The generated JavaScript code.
      * @throws {CompileError}
      */
-    return code_gen(parse(tokenize(code)));
+    return code_gen(parse(tokenize(code)), config_cls);
 }

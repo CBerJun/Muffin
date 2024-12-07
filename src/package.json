@@ -1,4 +1,5 @@
 {
+    "type": "module",
     "dependencies": {
         "@codemirror/autocomplete": "^6.18.3",
         "@codemirror/commands": "^6.1.2",

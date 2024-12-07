@@ -89,13 +89,94 @@ button#run.can-run {
 button#run.can-run:hover {
     background-color: #019927;
 }
+button#run.can-run svg#stop-icon {
+    display: none;
+}
 
 button#run.can-stop {
-    background-color: #800000;
-    border-color: #b30101;
+    background-color: #b30000;
+    border-color: #ff0000;
 }
 button#run.can-stop:hover {
-    background-color: #990101;
+    background-color: #db0000;
+}
+button#run.can-stop svg#run-icon {
+    display: none;
+}
+
+div#execution-wrapper {
+    position: relative;
+    height: 100%;
+}
+p#execution {
+    position: absolute;
+    overflow-y: auto;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #282c34;
+    border: solid 1px rgb(84, 87, 89);
+    padding: 0.4em 0.7em;
+    font-size: 14px;
+}
+
+span.exec-error {
+    color: #f55663;
+}
+span.exec-info {
+    color: rgb(164, 164, 164);
+}
+span.exec-normal {
+    color: white;
+}
+span.exec-input {
+    color: #6bacff;
+}
+
+div#input-bar {
+    display: flex;
+    margin: 0.45em 0;
+}
+
+input#input-line {
+    flex-grow: 1;
+    outline: none;
+    padding: 0.25em 0.5em;
+    font-family: inherit;
+    font-size: 14px;
+    background-color: #282c34;
+    color: white;
+    border: 1px solid rgb(84, 87, 89);
+    border-radius: 2px 0 0 2px;
+}
+input#input-line:disabled {
+    border-color: #949aa9;
+    background-color: #4a515f;
+}
+input#input-line::placeholder {
+    color: #afafaf;
+}
+
+button#send {
+    font-family: inherit;
+    font-size: 16px;
+    color: white;
+    border: 1px solid;
+    border-radius: 0 2px 2px 0;
+}
+button#send:enabled {
+    background-color: #ad5700;
+    border-color: #ff8000;
+    cursor: pointer;
+}
+button#send:enabled:hover {
+    background-color: #d76c00;
+}
+button#send:disabled {
+    background-color: #808080;
+    border-color: white;
+    cursor: not-allowed;
 }
 
 p {
@@ -105,6 +186,12 @@ p {
 
 a {
     color: rgb(35, 182, 255);
+    /*
+        These are usually defined in UA style sheet but links that does
+        not actually "link" anywhere (no href) may not have them:
+    */
+    text-decoration: underline;
+    cursor: pointer;
 }
 a:visited {
     color: rgb(140, 140, 237);
