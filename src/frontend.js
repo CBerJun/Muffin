@@ -1,5 +1,5 @@
 import * as cm6 from "./editor.js";
-import { compile, CompileError, CodeGenConfig } from "./muffin.js";
+import { compile, CompileError, CodeGenConfig, NodeConfig } from "./muffin.js";
 
 const AsyncFunction = async function () {}.constructor;
 
@@ -39,6 +39,12 @@ function crashed() {
 const executionBox = document.getElementById("execution");
 const runButton = document.getElementById("run");
 const runButtonText = document.getElementById("run-text");
+const compileToNodeButton = document.getElementById("compile-to-node");
+
+function executionFinished() {
+    updateRunButtonState("can-run");
+    compileToNodeButton.removeAttribute("disabled");
+}
 
 function muffinExit(code) {
     /* Exit handler passed to Muffin compiler. */
@@ -46,7 +52,7 @@ function muffinExit(code) {
     element.className = "exec-info";
     element.textContent = `Program exited with code ${code}`;
     executionBox.append(element);
-    updateRunButtonState("can-run");
+    executionFinished();
 }
 
 function muffinError(exc) {
@@ -75,7 +81,7 @@ function muffinError(exc) {
     }
     element.className = textKind;
     executionBox.append(element);
-    updateRunButtonState("can-run");
+    executionFinished();
 }
 
 function muffinPrint(object) {
@@ -168,67 +174,75 @@ function updateRunButtonState(state) {
 // Initial state:
 updateRunButtonState("can-run");
 
-export function onRunButtonClicked() {
-    /* Callback from button#run. */
-    if (runButton.className == "can-run") {
-        while (executionBox.lastChild) {
-            executionBox.lastChild.remove();
-        }
-        const source = editor.state.doc.toString();
-        let jsCode;
-        try {
-            jsCode = compile(source, MuffinConfig);
-        }
-        catch (exc) {
-            const element = document.createElement("span");
-            element.className = "exec-error";
-            if (exc instanceof CompileError) {
-                const prefixes = [];
-                if (exc.loc) {
-                    const locElement = document.createElement("a");
-                    locElement.onclick = (event) => {
-                        try {
-                            // The index may have become invalid (after
-                            // user changes code)
-                            editor.dispatch({
-                                selection: {anchor: exc.char_index}
-                            });
+function compileCode(configCls) {
+    while (executionBox.lastChild) {
+        executionBox.lastChild.remove();
+    }
+    const source = editor.state.doc.toString();
+    let jsCode;
+    try {
+        jsCode = compile(source, configCls);
+    }
+    catch (exc) {
+        const element = document.createElement("span");
+        element.className = "exec-error";
+        if (exc instanceof CompileError) {
+            const prefixes = [];
+            if (exc.loc) {
+                const locElement = document.createElement("a");
+                locElement.onclick = (event) => {
+                    try {
+                        // The index may have become invalid (after
+                        // user changes code)
+                        editor.dispatch({
+                            selection: {anchor: exc.char_index}
+                        });
+                    }
+                    catch (exc) {
+                        if (!(exc instanceof RangeError)) {
+                            throw exc;
                         }
-                        catch (exc) {
-                            if (!(exc instanceof RangeError)) {
-                                throw exc;
-                            }
-                        }
-                        editor.focus();
-                        return false;
-                    };
-                    const [line, col] = exc.loc;
-                    locElement.textContent = `line ${line} col ${col}`;
-                    prefixes.push(
-                        "At ",
-                        locElement,
-                        ": ",
-                    );
-                }
-                else {
-                    prefixes.push("Cause: ");
-                }
-                element.append(
-                    "Oops... Compilation failed!",
-                    document.createElement("br"),
-                    ...prefixes,
-                    exc.message,
-                    document.createElement("br"),
-                    "Fix your recipe and try baking it again later.",
+                    }
+                    editor.focus();
+                    return false;
+                };
+                const [line, col] = exc.loc;
+                locElement.textContent = `line ${line} col ${col}`;
+                prefixes.push(
+                    "At ",
+                    locElement,
+                    ": ",
                 );
             }
             else {
-                console.error(exc);
-                element.append(...crashed());
+                prefixes.push("Cause: ");
             }
-            executionBox.appendChild(element);
-            return;
+            element.append(
+                "Oops... Compilation failed!",
+                document.createElement("br"),
+                ...prefixes,
+                exc.message,
+                document.createElement("br"),
+                "Fix your recipe and try baking it again later.",
+            );
         }
+        else {
+            console.error(exc);
+            element.append(...crashed());
+        }
+        executionBox.appendChild(element);
+        return null;
+    }
+    return jsCode;
+}
+
+export function onRunButtonClicked() {
+    /* Callback from button#run. */
+    const jsCode = compileCode(MuffinConfig);
+    if (jsCode == null) {
+        return;
+    }
+    if (runButton.className == "can-run") {
         let compiledFunc;
         try {
             compiledFunc = new AsyncFunction(
@@ -244,6 +258,7 @@ export function onRunButtonClicked() {
             return;
         }
         updateRunButtonState("can-stop");
+        compileToNodeButton.setAttribute("disabled", "");
         executionCanceling = false;
         compiledFunc(
             muffinError, muffinExit, muffinPrint, muffinRest, muffinReadline,
@@ -298,3 +313,25 @@ inputLine.addEventListener("keydown", (event) => {
         onSendButtonClicked();
     }
 });
+
+export function onCompileToNodeButtonClicked() {
+    const jsCode = compileCode(NodeConfig);
+    if (jsCode == null) {
+        return;
+    }
+    const hintElement = document.createElement("span");
+    hintElement.className = "exec-info";
+    hintElement.textContent = (
+        "Muffin compiles down to JavaScript. Here's the compiled code for "
+        + "your recipe, which needs to run in a Node.js environment."
+    );
+    const codeElement = document.createElement("span");
+    codeElement.className = "exec-normal";
+    codeElement.textContent = jsCode;
+    executionBox.append(
+        hintElement,
+        document.createElement("br"),
+        document.createElement("br"),
+        codeElement,
+    );
+}

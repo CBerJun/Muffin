@@ -66,7 +66,8 @@ div#toolbar {
     display: flex;
 }
 
-button#run {
+button#run,
+button#compile-to-node {
     display: flex;
     align-items: center;
     gap: 0.3em;
@@ -102,6 +103,18 @@ button#run.can-stop:hover {
 }
 button#run.can-stop svg#run-icon {
     display: none;
+}
+
+button#compile-to-node {
+    background-color: #1f69d1;
+    border-color: #3e8fff;
+}
+button#compile-to-node:hover {
+    background-color: #2580ff;
+}
+
+button#compile-to-node svg {
+    stroke: white;
 }
 
 div#execution-wrapper {
@@ -173,7 +186,9 @@ button#send:enabled {
 button#send:enabled:hover {
     background-color: #d76c00;
 }
-button#send:disabled {
+
+button#send:disabled,
+button#compile-to-node:disabled {
     background-color: #808080;
     border-color: white;
     cursor: not-allowed;
