@@ -123,6 +123,7 @@ async function muffinReadline() {
     const s = await new Promise((r) => {
         readlineResolve = r;
         updateStdinSenderState(true);
+        inputLine.focus();
     });
     readlineResolve = null;
     updateStdinSenderState(false);
