@@ -68,7 +68,8 @@ div#toolbar {
 
 button#run,
 button#compile-to-node,
-button#load-example {
+button#load-example,
+button#open-docs {
     display: flex;
     align-items: center;
     gap: 0.3em;
@@ -115,7 +116,8 @@ button#compile-to-node:hover {
     background-color: #2580ff;
 }
 
-button#compile-to-node svg {
+button#compile-to-node svg,
+button#open-docs svg {
     stroke: white;
 }
 
@@ -151,6 +153,14 @@ button#load-example {
     cursor: auto;
     background-color: #8a00a3;
     border-color: #d800ff;
+}
+
+button#open-docs {
+    background-color: #178ca0;
+    border-color: #1ecae8;
+}
+button#open-docs:hover {
+    background-color: #1aaac2;
 }
 
 div#execution-wrapper {

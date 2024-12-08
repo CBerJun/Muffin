@@ -356,3 +356,10 @@ examples.forEach((value, key) => {
     });
     examplesDiv.append(element);
 });
+
+const docsUrl =
+"https://github.com/CBerJun/Muffin?tab=readme-ov-file#language-specification";
+
+export function openDocs() {
+    window.open(docsUrl, "_blank", "noreferrer");
+}
