@@ -86,7 +86,7 @@ function muffinError(exc) {
 
 function muffinPrint(object) {
     /* Print/println handler passed to Muffin compiler. */
-    const lines = object.split("\n");
+    const lines = String(object).split("\n");
     const children = [];
     for (let i = 0; i < lines.length; ++i) {
         children.push(lines[i]);

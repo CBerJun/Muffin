@@ -818,7 +818,7 @@ export class NodeConfig extends CodeGenConfig {
         return `console.log(${object});`;
     }
     handle_print(object) {
-        return `process.stdout.write(${object});`;
+        return `process.stdout.write(String(${object}));`;
     }
     handle_read_line() {
         this.readline_needed = true;
