@@ -21,6 +21,8 @@ function createSubmitIssue() {
     const submitIssue = document.createElement("a");
     submitIssue.textContent = "submit an issue";
     submitIssue.href = "https://github.com/CBerJun/Muffin/issues/new";
+    submitIssue.target = "_blank";
+    submitIssue.rel = "noreferrer";
     return submitIssue;
 }
 
