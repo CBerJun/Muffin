@@ -67,7 +67,8 @@ div#toolbar {
 }
 
 button#run,
-button#compile-to-node {
+button#compile-to-node,
+button#load-example {
     display: flex;
     align-items: center;
     gap: 0.3em;
@@ -79,7 +80,8 @@ button#compile-to-node {
     cursor: pointer;
 }
 
-button#run svg {
+button#run svg,
+button#load-example svg {
     fill: white;
 }
 
@@ -115,6 +117,40 @@ button#compile-to-node:hover {
 
 button#compile-to-node svg {
     stroke: white;
+}
+
+div#example-dropdown {
+    display: inline-block;
+    position: relative;
+}
+
+div#examples {
+    display: none;
+    position: absolute;
+    box-shadow: 0px 1px 2px 1px #ffffff66;
+}
+div#example-dropdown:hover div#examples {
+    display: block;
+    z-index: 1;
+}
+
+div#examples span {
+    display: block;
+    background-color: #282c34;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0.15em 0.3em;
+}
+div#examples span:hover {
+    background-color: #6bacff;
+    color: black;
+}
+
+button#load-example {
+    cursor: auto;
+    background-color: #8a00a3;
+    border-color: #d800ff;
 }
 
 div#execution-wrapper {

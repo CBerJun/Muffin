@@ -3,7 +3,7 @@ import { compile, CompileError, CodeGenConfig, NodeConfig } from "./muffin.js";
 
 const AsyncFunction = async function () {}.constructor;
 
-const presetCode = `Muffin recipe
+const helloWorldCode = `Muffin recipe
 ingredients
     "Hello, world!" brand Flour
 method
@@ -14,7 +14,7 @@ method
 `;
 const editor = new cm6.EditorView({
     parent: document.getElementById('code'),
-    state: cm6.createEditorState(presetCode),
+    state: cm6.createEditorState(helloWorldCode),
 });
 
 function createSubmitIssue() {
@@ -335,3 +335,24 @@ export function onCompileToNodeButtonClicked() {
         codeElement,
     );
 }
+
+const examples = new Map([
+    ["Hello, world!", helloWorldCode],
+]);
+
+const examplesDiv = document.getElementById("examples");
+
+// Initialize div#examples
+examples.forEach((value, key) => {
+    const element = document.createElement("span");
+    element.textContent = key;
+    element.addEventListener("click", () => {
+        editor.dispatch({
+            changes: {
+                from: 0, to: editor.state.doc.length,
+                insert: value
+            }
+        });
+    });
+    examplesDiv.append(element);
+});
