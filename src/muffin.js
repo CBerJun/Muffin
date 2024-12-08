@@ -73,6 +73,7 @@ const key_phrases = new Set([
     'and dump into',
     'microwave',
     'serve with',
+    'in grill mode',
 ]);
 const operators = new Map([
     [",", TokenKind.COMMA],
@@ -291,6 +292,7 @@ const OpCodes = {
     MICROWAVE: 14,  // mold
     MOLD_PUSH_ING: 15,  // mold, ing
     SERVE_WITH: 16,  // recipe
+    MICROWAVE_GRILL: 17,  // mold
 };
 
 const PredicateKind = {
@@ -723,7 +725,23 @@ class Parser {
             }
             case "microwave": {
                 const mold = this.mold();
-                ret = {op: OpCodes.MICROWAVE, mold: mold};
+                const second = this.expect(
+                    TokenKind.NEW_LINE, TokenKind.KEY_PHRASE
+                );
+                let op;
+                if (second.kind == TokenKind.NEW_LINE) {
+                    consume_new_line = false;
+                    op = OpCodes.MICROWAVE;
+                }
+                else if (second.value == "in grill mode") {
+                    op = OpCodes.MICROWAVE_GRILL;
+                }
+                else {
+                    this.complain(
+                        second, `keyword "${second.value}" can't be used here`
+                    );
+                }
+                ret = {op, mold};
                 break;
             }
             case "serve with": {
@@ -1066,13 +1084,15 @@ class CodeGenerator {
                 )),
             ]
         case OpCodes.MICROWAVE:
+        case OpCodes.MICROWAVE_GRILL:
             t1 = "cannot microwave empty mold";
+            t2 = x.op == OpCodes.MICROWAVE ? "handle_println" : "handle_print";
             return [
                 this.acquire_mold(x.mold, (m) => {
                     const object = `${m}[${m}.length - 1]`;
                     return (
                         `if (!${m}.length) {${this.call_fatal(t1)}}`
-                        + `else {${this.config.handle_println(object)}}`
+                        + `else {${this.config[t2](object)}}`
                     );
                 }),
             ]

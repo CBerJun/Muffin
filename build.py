@@ -33,6 +33,7 @@ key_phrases = [
     'and dump into',
     'microwave',
     'serve with',
+    'in grill mode',
 ]
 special_keywords = [
     # These keywords are explicitly used in muffin.grammar.in

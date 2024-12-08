@@ -245,6 +245,7 @@ takes one of these forms:
 * `remove a layer from <Mold> and dump into <Bowl>`: Remove/Pop the top integer
   value from `<Mold>` and put it into `<Bowl>`.
 * `microwave <Mold>`: Print out the top value of `<Mold>` and a new line.
+* `microwave <Mold> in grill mode`: Print out the top value of `<Mold>`.
 * `serve with <Recipe name>`: Execute the recipe named `<Recipe name>` and wait
   until it finishes.
 
