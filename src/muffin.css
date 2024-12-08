@@ -64,6 +64,7 @@ div#code {
 
 div#toolbar {
     display: flex;
+    gap: 4px;
 }
 
 button#run,
@@ -152,7 +153,7 @@ div#examples span:hover {
 button#load-example {
     cursor: auto;
     background-color: #8a00a3;
-    border-color: #d800ff;
+    border-color: #c427e0;
 }
 
 button#open-docs {
