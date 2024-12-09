@@ -74,6 +74,12 @@ const key_phrases = new Set([
     'microwave',
     'serve with',
     'in grill mode',
+    'stir the mixture in',
+    'until smooth',
+    'sift the mixture in',
+    'whip the mixture in',
+    'bring the mixture in',
+    'to a boil',
 ]);
 const operators = new Map([
     [",", TokenKind.COMMA],
@@ -293,6 +299,11 @@ const OpCodes = {
     MOLD_PUSH_ING: 15,  // mold, ing
     SERVE_WITH: 16,  // recipe
     MICROWAVE_GRILL: 17,  // mold
+    STIR_UNTIL_SMOOTH: 18,  // mold
+    SIFT: 19,  // mold
+    WHIP: 20,  // mold
+    BOIL: 21,  // mold
+    MOLD_PUSH_HALF_BOWL: 22,  // mold, bowl
 };
 
 const PredicateKind = {
@@ -659,8 +670,11 @@ class Parser {
             case "pour half of contents of": {
                 const bowl1 = this.bowl();
                 this.expect_keyword("into");
-                const bowl2 = this.bowl();
-                ret = {op: OpCodes.TRANSFER_HALF, bowl1: bowl1, bowl2: bowl2};
+                const [kind, second] = this.bowl_or_mold();
+                ret = kind == "bowl" ?
+                    {op: OpCodes.TRANSFER_HALF, bowl1: bowl1, bowl2: second}
+                    : {op: OpCodes.MOLD_PUSH_HALF_BOWL, mold: second,
+                       bowl: bowl1};
                 break;
             }
             case "pour contents of": {
@@ -742,6 +756,26 @@ class Parser {
                     );
                 }
                 ret = {op, mold};
+                break;
+            }
+            case "stir the mixture in": {
+                const mold = this.mold();
+                this.expect_keyword("until smooth");
+                ret = {op: OpCodes.STIR_UNTIL_SMOOTH, mold};
+                break;
+            }
+            case "sift the mixture in": {
+                ret = {op: OpCodes.SIFT, mold: this.mold()};
+                break;
+            }
+            case "whip the mixture in": {
+                ret = {op: OpCodes.WHIP, mold: this.mold()};
+                break;
+            }
+            case "bring the mixture in": {
+                const mold = this.mold();
+                this.expect_keyword("to a boil");
+                ret = {op: OpCodes.BOIL, mold};
                 break;
             }
             case "serve with": {
@@ -978,6 +1012,24 @@ class CodeGenerator {
     acquire_bowl(node, cb) {
         return this.acquire_mold_bowl_impl(node, cb, "bowl_array");
     }
+    mold_pop2(node, cb) {
+        return this.acquire_mold(node, (mold) => {
+            const m1 =
+                "not enough elements in mold to perform this step (2 needed)";
+            const m2 = "top of mold is not a number";
+            const m3 = "second top of mold is not a number";
+            const tos = this.n_tmp + "[0]";
+            const tos1 = this.n_tmp + "[1]";
+            return [
+                `if (${mold}.length < 2) {${this.call_fatal(m1)}}`,
+                `${this.n_tmp} = [${mold}.pop()];`,
+                `if (typeof ${tos} == "string") {${this.call_fatal(m2)}}`,
+                `${this.n_tmp}.push(${mold}.pop());`,
+                `if (typeof ${tos1} == "string") {${this.call_fatal(m3)}}`,
+                cb(mold, tos1, tos),
+            ].join("");
+        });
+    }
     call_fatal(message) {
         if (!this.error_message_ids.has(message)) {
             this.error_message_ids.set(message, this.error_message_ids.size);
@@ -1089,7 +1141,16 @@ class CodeGenerator {
         case OpCodes.MOLD_PUSH_BOWL:
             return [
                 this.acquire_bowl(x.bowl, (b) => this.acquire_mold(
-                    x.mold, (m) => `${b}.push(${m});`
+                    x.mold, (m) => `${m}.push(${b}); ${b} = 0;`
+                )),
+            ]
+        case OpCodes.MOLD_PUSH_HALF_BOWL:
+            return [
+                this.acquire_bowl(x.bowl, (b) => this.acquire_mold(
+                    x.mold, (m) => (
+                        `${this.n_tmp} = Math.floor(${b} / 2);`
+                        + `${b} -= ${this.n_tmp}; ${m}.push(${this.n_tmp});`
+                    )
                 )),
             ]
         case OpCodes.MOLD_POP:
@@ -1109,7 +1170,7 @@ class CodeGenerator {
                         + `{${this.call_fatal(t1)}}`
                         + `else if (typeof ${this.n_tmp} == "string")`
                         + `{${this.call_fatal(t2)}}`
-                        + `else {${b} = ${this.n_tmp};}`
+                        + `else {${b} += ${this.n_tmp};}`
                 )),
             ]
         case OpCodes.MICROWAVE:
@@ -1135,6 +1196,23 @@ class CodeGenerator {
             return [
                 `${this.call_func(x.recipe)};`
             ]
+        case OpCodes.STIR_UNTIL_SMOOTH:
+            return [this.mold_pop2(x.mold, (mold, lhs, rhs) => (
+                `${mold}.push(Math.floor(Math.random()*`
+                + `(${rhs}-${lhs}+1))+${lhs});`
+            ))];
+        case OpCodes.SIFT:
+            return [this.mold_pop2(x.mold, (mold, lhs, rhs) => (
+                `${mold}.push(Math.floor(${lhs}/${rhs}));`
+            ))];
+        case OpCodes.WHIP:
+            return [this.mold_pop2(x.mold, (mold, lhs, rhs) => (
+                `${mold}.push(${lhs}*${rhs});`
+            ))];
+        case OpCodes.BOIL:
+            return [this.mold_pop2(x.mold, (mold, lhs, rhs) => (
+                `${mold}.push(${lhs}-Math.min(${lhs}, ${rhs}));`
+            ))];
         default:
             throw new Error(`Op code ${x.op} not supported yet`);
         }

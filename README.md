@@ -240,12 +240,25 @@ takes one of these forms:
 * `add <Ingredient name> into <Mold>`: Push the integer or string constant
   specified by `<Ingredient name>` onto `<Mold>`.
 * `pour contents of <Bowl> into <Mold>`: Push the value of `<Bowl>` onto
-  `<Mold>`.
+  `<Mold>`, and set value of `<Bowl>` to 0.
+* `pour half of contents of <Bowl> into <Mold>`: Push half the value of
+  `<Bowl>` onto mold (round down) and `<Bowl>` loses that value.
 * `remove a layer from <Mold>`: Remove/Pop the top value from `<Mold>`.
 * `remove a layer from <Mold> and dump into <Bowl>`: Remove/Pop the top integer
-  value from `<Mold>` and put it into `<Bowl>`.
+  value from `<Mold>` and add it into `<Bowl>`.
 * `microwave <Mold>`: Print out the top value of `<Mold>` and a new line.
 * `microwave <Mold> in grill mode`: Print out the top value of `<Mold>`.
+* `stir the mixture in <Mold> until smooth`: Pop the top two integer values of
+  `<Mold>` and push a random number, using the top number as maximum and the
+  bottom number as minimum (inclusive).
+* `sift the mixture in <Mold>`: Pop the top two integer values of `<Mold>` and
+  push the result of dividing the bottom value by the top value, with the
+  decimal part truncated.
+* `whip the mixture in <Mold>`: Pop the top two integer values of `<Mold>` and
+  push the result of multiplying them.
+* `bring the mixture in <Mold> to a boil`: Pop the top two integer values of
+  `<Mold>` and push the result of subtracting the bottom value from the top
+  value. If the result is negative, it gets cramped to 0.
 * `serve with <Recipe name>`: Execute the recipe named `<Recipe name>` and wait
   until it finishes.
 

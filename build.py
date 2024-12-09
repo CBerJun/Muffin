@@ -34,6 +34,12 @@ key_phrases = [
     'microwave',
     'serve with',
     'in grill mode',
+    'stir the mixture in',
+    'until smooth',
+    'sift the mixture in',
+    'whip the mixture in',
+    'bring the mixture in',
+    'to a boil',
 ]
 special_keywords = [
     # These keywords are explicitly used in muffin.grammar.in
