@@ -247,11 +247,11 @@ function compileCode(configCls) {
 
 export function onRunButtonClicked() {
     /* Callback from button#run. */
-    const jsCode = compileCode(MuffinConfig);
-    if (jsCode == null) {
-        return;
-    }
     if (runButton.className == "can-run") {
+        const jsCode = compileCode(MuffinConfig);
+        if (jsCode == null) {
+            return;
+        }
         let compiledFunc;
         try {
             compiledFunc = new AsyncFunction(
