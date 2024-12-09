@@ -375,7 +375,7 @@ class Parser {
         if (words.includes(tok.value)) {
             return tok.value;
         }
-        const message = "expecting"
+        const message = "expecting "
             + or_list(words.map((x) => `"${x}"`));
         this.complain(tok, message);
     }
