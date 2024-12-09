@@ -746,7 +746,7 @@ class Parser {
             }
             case "serve with": {
                 const recipe = this.expect(TokenKind.PHRASE);
-                ret = {op: OpCodes.SERVE_WITH, recipe: recipe};
+                ret = {op: OpCodes.SERVE_WITH, recipe: recipe.value};
                 break;
             }
             default: {
