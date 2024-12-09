@@ -55,21 +55,25 @@ function muffinExit(code) {
     executionFinished();
 }
 
-function muffinError(exc) {
+function muffinError(message) {
     /* Error handler passed to Muffin compiler. */
+    const element = document.createElement("span");
+    element.className = "exec-error";
+    element.textContent = `Runtime error: ${message}`;
+    executionBox.append(element);
+    executionFinished();
+}
+
+function muffinUnexpectedError(exc) {
+    /* Unexpected error handler passed to Muffin compiler. */
     const element = document.createElement("span");
     let textKind;
     if (exc instanceof ExecutionCancelled) {
         textKind = "exec-info";
         element.textContent = "Execution terminated";
     }
-    else if (typeof exc == "string") {
-        // Muffin throws runtime errors as strings
-        textKind = "exec-error";
-        element.textContent = `Runtime error: ${exc}`;
-    }
     else {
-        // Unexpected error
+        // Real unexpected error
         textKind = "exec-error";
         element.append(
             "An unexpected error happened.",
@@ -141,6 +145,7 @@ const argPrint = "T3";
 const opCounter = "T4";
 const argRest = "T5";
 const argReadline = "T6";
+const argUnexpectedError = "T7";
 
 class MuffinConfig extends CodeGenConfig {
     constructor(owner) {
@@ -152,6 +157,9 @@ class MuffinConfig extends CodeGenConfig {
     }
     handle_error(error) {
         return `${argError}(${error});`;
+    }
+    handle_unexpected_error(error) {
+        return `${argUnexpectedError}(${error});`;
     }
     handle_exit(code) {
         return `${argExit}(${code});`;
@@ -248,6 +256,7 @@ export function onRunButtonClicked() {
         try {
             compiledFunc = new AsyncFunction(
                 argError, argExit, argPrint, argRest, argReadline,
+                argUnexpectedError,
                 jsCode
             );
         }
@@ -263,6 +272,7 @@ export function onRunButtonClicked() {
         executionCanceling = false;
         compiledFunc(
             muffinError, muffinExit, muffinPrint, muffinRest, muffinReadline,
+            muffinUnexpectedError
         );
     }
     else {

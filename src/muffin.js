@@ -787,6 +787,9 @@ export class CodeGenConfig {
     handle_error(error) {
         throw new Error("not implemented");
     }
+    handle_unexpected_error(error) {
+        throw new Error("not implemented");
+    }
     handle_exit(code) {
         throw new Error("not implemented");
     }
@@ -810,6 +813,9 @@ export class NodeConfig extends CodeGenConfig {
     }
     handle_error(error) {
         return `console.error("Muffin error: " + ${error});`;
+    }
+    handle_unexpected_error(error) {
+        return `console.error(\`Unexpected error: \${${error}}\`);`;
     }
     handle_exit(code) {
         return `process.exit(${code});`;
@@ -844,8 +850,11 @@ export class NodeConfig extends CodeGenConfig {
 class CodeGenerator {
     constructor(program, config_cls) {
         this.recipe_ids = new Map();
+        this.recipe_resolve = [];
         this.bowl_kind_ids = new Map();
         this.mold_kind_ids = new Map();
+        this.error_message_ids = new Map();
+        this.error_message_resolve = [];
         this.config = new config_cls(this);
         this.n_func = "f";
         this.n_bowls = "b";
@@ -856,10 +865,9 @@ class CodeGenerator {
         this.n_err = "e";
         this.n_tmp = "t";
         this.program = program;
-        let i = 0;
         for (const name of program.recipes.keys()) {
-            i++;
-            this.recipe_ids.set(name, i);
+            this.recipe_ids.set(name, this.recipe_ids.size);
+            this.recipe_resolve.push(name);
         }
     }
     main() {
@@ -899,9 +907,25 @@ class CodeGenerator {
                 "}",  // end function
             );
         }
+        const print_error = this.config.handle_error([
+            '`in recipe "${',
+            JSON.stringify(this.recipe_resolve),
+            '[',
+            this.n_err,
+            '[0]]}", step ${',
+            this.n_err,
+            '[1]}: ${',
+            JSON.stringify(this.error_message_resolve),
+            '[',
+            this.n_err,
+            '[2]]}`',
+        ].join(""));
         ret.push(
             `try {${this.config.handle_exit(this.call_func("Muffin"))}}`,
-            `catch (${this.n_err}) {${this.config.handle_error(this.n_err)}}`,
+            `catch (${this.n_err}) {`,
+            `if (${this.n_err} instanceof Array) {${print_error}}`,
+            `else {${this.config.handle_unexpected_error(this.n_err)}}`,
+            "}",
         );
         if (this.config.teardown) {
             ret.push(`finally {${this.config.teardown}}`);
@@ -957,8 +981,15 @@ class CodeGenerator {
         return this.acquire_mold_bowl_impl(node, cb, "bowl_array");
     }
     call_fatal(message) {
-        const msg =
-            `"${this.current_recipe}": step ${this.current_step}: ${message}`;
+        if (!this.error_message_ids.has(message)) {
+            this.error_message_ids.set(message, this.error_message_ids.size);
+            this.error_message_resolve.push(message);
+        }
+        const msg = [
+            this.recipe_ids.get(this.current_recipe),
+            this.current_step,
+            this.error_message_ids.get(message),
+        ];
         return `throw ${JSON.stringify(msg)};`;
     }
     gen_step(x) {
