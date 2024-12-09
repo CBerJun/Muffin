@@ -834,10 +834,8 @@ export class NodeConfig extends CodeGenConfig {
     at_last(code) {
         if (this.readline_needed) {
             return (
-                "import * as readline from 'node:readline';"
-                + "import {stdin, stdout} from 'node:process';"
-                + "const rl = readline.createInterface({input: stdin"
-                + ", output: stdout});"
+                "import {createInterface} from 'node:readline';"
+                + "const rl = createInterface({input: process.stdin});"
                 + "function LL() {return new Promise((r) => "
                 + "rl.question('', r));}"
                 + code
