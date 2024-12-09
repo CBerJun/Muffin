@@ -116,9 +116,11 @@ async function muffinRest(opCounter) {
     }
     // After 1000 Muffin instructions have been executed, sleep for
     // 10 milliseconds to prevent blocking the whole interpreter.
-    if (opCounter >= 1000) {
+    if (opCounter >= 999) {
         await new Promise((r) => setTimeout(r, 10));
+        return 0;
     }
+    return opCounter + 1;
 }
 
 let readlineResolve = null;
@@ -151,9 +153,7 @@ class MuffinConfig extends CodeGenConfig {
     constructor(owner) {
         super(owner);
         this.asynchronous = true;
-        this.func_prolog = `let ${opCounter} = 0;`;
-        this.loop_prolog = `${opCounter}++;`;
-        this.loop_epilog = `await ${argRest}(${opCounter});`;
+        this.loop_epilog = `${opCounter} = await ${argRest}(${opCounter});`;
     }
     handle_error(error) {
         return `${argError}(${error});`;
@@ -172,6 +172,9 @@ class MuffinConfig extends CodeGenConfig {
     }
     handle_read_line() {
         return `await ${argReadline}()`;
+    }
+    at_last(code) {
+        return `let ${opCounter} = 0;` + code;
     }
 }
 
