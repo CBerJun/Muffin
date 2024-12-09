@@ -352,6 +352,255 @@ export function onCompileToNodeButtonClicked() {
 
 const examples = new Map([
     ["Hello, world!", helloWorldCode],
+    ["Fibonacci", `Muffin recipe
+ingredients
+    1 Blueberry
+    19 grams of Butter
+method
+    1. set up 4 Bowls
+    2. add Blueberry into 3rd Bowl
+    3. add water to 1st Bowl at a 1:1 ratio
+    4. pour half of contents of 1st Bowl into 4th Bowl
+    5. remove Butter from 4th Bowl
+    6. if 4th Bowl is not empty, proceed to step 15
+    7. place 3rd Bowl in the oven and bake at 190C
+    8. clean 4th Bowl
+    9. pour contents of 2nd Bowl into 4th Bowl
+    10. add water to 3rd Bowl at a 1:1 ratio
+    11. pour half of contents of 3rd Bowl into 2nd Bowl
+    12. pour contents of 4th Bowl into 3rd Bowl
+    13. add Blueberry into 1st Bowl
+    14. go back to step 3
+    15. serves 1
+`],
+    ["FizzBuzz", `Muffin recipe
+ingredients
+    100 grams of Sugar
+    1 Egg
+    3 grams of Salt
+    5 grams of Maple Syrup
+    "Fizz" brand Whipping Cream
+    "Buzz" brand Vanilla Beans
+    "FizzBuzz" brand Sour Cream
+method
+    1. set up 2 Bowls
+    2. set up a Pizza Pan
+    3. add Egg into 1st Bowl
+    4. add water to 1st Bowl at a 1:1 ratio
+    5. clean 2nd Bowl
+    6. pour half of contents of 1st Bowl into 2nd Bowl
+    7. remove Sugar from 2nd Bowl
+    8. if 2nd Bowl is not empty, proceed to step 34
+    9. add water to 1st Bowl at a 1:1 ratio
+    10. pour half of contents of 1st Bowl into Pizza Pan
+    11. add Salt into Pizza Pan
+    12. serve with Blueberry Sauce
+    13. add water to 1st Bowl at a 1:1 ratio
+    14. pour half of contents of 1st Bowl into Pizza Pan
+    15. add Maple Syrup into Pizza Pan
+    16. serve with Blueberry Sauce
+    17. remove a layer from Pizza Pan and dump into 2nd Bowl
+    18. if 2nd Bowl is empty, proceed to step 24
+    19. clean 2nd Bowl
+    20. remove a layer from Pizza Pan and dump into 2nd Bowl
+    21. if 2nd Bowl is empty, proceed to step 28
+    22. place 1st Bowl in the oven and bake at 190C
+    23. proceed to step 33
+    24. remove a layer from Pizza Pan and dump into 2nd Bowl
+    25. if 2nd Bowl is empty, proceed to step 30
+    26. add Vanilla Beans into Pizza Pan
+    27. proceed to step 31
+    28. add Whipping Cream into Pizza Pan
+    29. proceed to step 31
+    30. add Sour Cream into Pizza Pan
+    31. microwave Pizza Pan
+    32. remove a layer from Pizza Pan
+    33. go back to step 3
+    34. serves 1
+
+Blueberry Sauce recipe
+ingredients
+method
+    1. set up 2 Bowls
+    2. remove a layer from Pizza Pan and dump into 2nd Bowl
+    3. remove a layer from Pizza Pan and dump into 1st Bowl
+    4. add water to 1st Bowl at a 1:1 ratio
+    5. pour half of contents of 1st Bowl into Pizza Pan
+    6. pour contents of 1st Bowl into Pizza Pan
+    7. add water to 2nd Bowl at a 1:1 ratio
+    8. pour half of contents of 2nd Bowl into Pizza Pan
+    9. sift the mixture in Pizza Pan
+    10. pour contents of 2nd Bowl into Pizza Pan
+    11. whip the mixture in Pizza Pan
+    12. bring the mixture in Pizza Pan to a boil
+`],
+    ["Guess the Number", `Muffin recipe
+ingredients
+    1 Onion
+    100 grams of Sugar
+    "Guess a number between " brand Cheddar Cheese
+    " and " brand Mozzarella Cheese
+    "Make a guess: " brand Chives
+    "Too big" brand Sausages
+    "Too small" brand Shallots
+    "Correct!" brand Butter
+method
+    1. set up a Toast Mold
+    2. set up 3 Bowls
+    3. add Cheddar Cheese into Toast Mold
+    4. microwave Toast Mold in grill mode
+    5. remove a layer from Toast Mold
+    6. add Onion into Toast Mold
+    7. microwave Toast Mold in grill mode
+    8. add Mozzarella Cheese into Toast Mold
+    9. microwave Toast Mold in grill mode
+    10. remove a layer from Toast Mold
+    11. add Sugar into Toast Mold
+    12. microwave Toast Mold
+    13. stir the mixture in Toast Mold until smooth
+    14. remove a layer from Toast Mold and dump into 1st Bowl
+    15. add Chives into Toast Mold
+    16. microwave Toast Mold in grill mode
+    17. remove a layer from Toast Mold
+    18. place 2nd Bowl in the oven and bake at 230C
+    19. add water to 2nd Bowl at a 1:1 ratio
+    20. pour half of contents of 2nd Bowl into Toast Mold
+    21. add water to 1st Bowl at a 1:1 ratio
+    22. pour half of contents of 1st Bowl into Toast Mold
+    23. bring the mixture in Toast Mold to a boil
+    24. clean 3rd Bowl
+    25. remove a layer from Toast Mold and dump into 3rd Bowl
+    26. add water to 1st Bowl at a 1:1 ratio
+    27. pour half of contents of 1st Bowl into Toast Mold
+    28. pour contents of 2nd Bowl into Toast Mold
+    29. bring the mixture in Toast Mold to a boil
+    30. remove a layer from Toast Mold and dump into 2nd Bowl
+    31. if 3rd Bowl is empty, proceed to step 34
+    32. add Sausages into Toast Mold
+    33. proceed to step 36
+    34. if 2nd Bowl is empty, proceed to step 39
+    35. add Shallots into Toast Mold
+    36. microwave Toast Mold
+    37. remove a layer from Toast Mold
+    38. go back to step 15
+    39. add Butter into Toast Mold
+    40. microwave Toast Mold
+`],
+    ["99 Bottles of Beer", `Muffin recipe
+ingredients
+    " of beer on the wall, " brand Beer
+    " of beer." brand Ginger Ale
+    "Take one down and pass it around, " brand Yogurt
+    " of beer on the wall." brand Basil
+    1 Egg Yolk
+    99 Eggs
+method
+    1. set up a Pizza Pan
+    2. set up a Bowl
+    3. add Eggs into Bowl
+    4. add water to Bowl at a 1:1 ratio
+    5. pour half of contents of Bowl into Pizza Pan
+    6. serve with Fruit Salad
+    7. add Beer into Pizza Pan
+    8. microwave Pizza Pan in grill mode
+    9. remove a layer from Pizza Pan
+    10. add water to Bowl at a 1:1 ratio
+    11. pour half of contents of Bowl into Pizza Pan
+    12. serve with Fruit Salad
+    13. add Ginger Ale into Pizza Pan
+    14. microwave Pizza Pan
+    15. remove a layer from Pizza Pan
+    16. add Yogurt into Pizza Pan
+    17. microwave Pizza Pan in grill mode
+    18. remove a layer from Pizza Pan
+    19. remove Egg Yolk from Bowl
+    20. add water to Bowl at a 1:1 ratio
+    21. pour half of contents of Bowl into Pizza Pan
+    22. serve with Fruit Salad
+    23. add Basil into Pizza Pan
+    24. microwave Pizza Pan
+    25. remove a layer from Pizza Pan
+    26. if Bowl is not empty, go back to step 4
+
+Fruit Salad recipe
+ingredients
+    " bottles" brand Star Fruit
+    "1 bottle" brand Coconuts
+    "no more bottles" brand Strawberries
+    1 Egg
+method
+    1. set up a Bowl
+    2. remove a layer from Pizza Pan and dump into Bowl
+    3. if Bowl is empty, proceed to step 12
+    4. remove Egg from Bowl
+    5. if Bowl is empty, proceed to step 14
+    6. add Egg into Bowl
+    7. pour contents of Bowl into Pizza Pan
+    8. microwave Pizza Pan in grill mode
+    9. remove a layer from Pizza Pan
+    10. add Star Fruit into Pizza Pan
+    11. proceed to step 15
+    12. add Strawberries into Pizza Pan
+    13. proceed to step 15
+    14. add Coconuts into Pizza Pan
+    15. microwave Pizza Pan in grill mode
+    16. remove a layer from Pizza Pan
+`],
+    ["Factorial", `Muffin recipe
+ingredients
+    1 Potato
+    "Enter a nonnegative integer: " brand Oregano
+    "! = " brand Cheese
+method
+    1. set up a Baking Dish
+    2. set up a Bowl
+    3. add Oregano into Baking Dish
+    4. microwave Baking Dish in grill mode
+    5. place Bowl in the oven and bake at 230C
+    6. add water to Bowl at a 1:1 ratio
+    7. pour half of contents of Bowl into Baking Dish
+    8. add Potato into Baking Dish
+    9. if Bowl is empty, proceed to step 15
+    10. add water to Bowl at a 1:1 ratio
+    11. pour half of contents of Bowl into Baking Dish
+    12. whip the mixture in Baking Dish
+    13. remove Potato from Bowl
+    14. go back to step 9
+    15. remove a layer from Baking Dish and dump into Bowl
+    16. microwave Baking Dish in grill mode
+    17. add Cheese into Baking Dish
+    18. microwave Baking Dish in grill mode
+    19. place Bowl in the oven and bake at 190C
+`],
+    ["Input/Output", `Muffin recipe
+ingredients
+    "Enter an integer: " brand Flour
+    "Enter a character: " brand Butter
+    "You typed " brand Eggs
+    "The code point of your character is " brand Sugar
+method
+    1. set up 2 Bowls
+    2. set up a Pizza Pan
+    3. add Flour into Pizza Pan
+    4. microwave Pizza Pan in grill mode
+    5. place 1st Bowl in the oven and bake at 230C
+    6. add Eggs into Pizza Pan
+    7. microwave Pizza Pan in grill mode
+    8. place 1st Bowl in the oven and bake at 190C
+    9. add Butter into Pizza Pan
+    10. microwave Pizza Pan in grill mode
+    11. place 2nd Bowl in the oven and bake at 350F
+    12. add Sugar into Pizza Pan
+    13. microwave Pizza Pan in grill mode
+    14. place 2nd Bowl in the oven and bake at 190C
+    15. serves 1
+`],
+    ["Infinite Loop", `Muffin recipe
+ingredients
+method
+    1. proceed to step 2
+    2. go back to step 1
+`],
 ]);
 
 const examplesDiv = document.getElementById("examples");
