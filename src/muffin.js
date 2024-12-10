@@ -685,7 +685,7 @@ class Parser {
                 if (num.value <= step_num) {
                     this.complain(num, "must be a future step number");
                 }
-                ret = {op: OpCodes.GO_TO, step: num.value};
+                ret = {op: OpCodes.GO_TO, step: num.value, loc: num.loc};
                 break;
             }
             case "go back to step": {
@@ -774,7 +774,10 @@ class Parser {
             }
             case "serve with": {
                 const recipe = this.expect(TokenKind.PHRASE);
-                ret = {op: OpCodes.SERVE_WITH, recipe: recipe.value};
+                ret = {
+                    op: OpCodes.SERVE_WITH, recipe: recipe.value,
+                    loc: recipe.loc
+                };
                 break;
             }
             default: {
@@ -796,8 +799,26 @@ function parse(tokens) {
 
 function semantic_analyze(program) {
     // Make sure "Muffin" recipe exists
-    // Make sure GO_TO targets are good
-    // Make sure SERVE_WITH recipe is defined
+    if (!program.recipes.has("Muffin")) {
+        throw new CompileError('entry recipe "Muffin" is not found', null);
+    }
+    for (const recipe of program.recipes.values()) {
+        for (const step of recipe.steps) {
+            const c = step.content;
+            // Make sure GO_TO targets are good
+            if (c.op == OpCodes.GO_TO && c.step > recipe.steps.length) {
+                throw new CompileError(
+                    `step number ${c.step} is too big`, c.loc
+                );
+            }
+            // Make sure SERVE_WITH recipe is defined
+            if (c.op == OpCodes.SERVE_WITH && !program.recipes.has(c.recipe)) {
+                throw new CompileError(
+                    `recipe "${c.recipe}" is not found`, c.loc
+                );
+            }
+        }
+    }
 }
 
 /*--- The code generator! ---*/
@@ -1254,5 +1275,7 @@ export function compile(code, config_cls) {
      * @returns {string} The generated JavaScript code.
      * @throws {CompileError}
      */
-    return code_gen(parse(tokenize(code)), config_cls);
+    const program = parse(tokenize(code));
+    semantic_analyze(program);
+    return code_gen(program, config_cls);
 }
