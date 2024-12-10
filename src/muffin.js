@@ -19,26 +19,32 @@ const TokenNames = Object.fromEntries(
     Object.entries(TokenKind).map((x) => x.reverse())
 );
 
+class Loc {
+    constructor(line_no, col_no, char_index) {
+        this.line_no = line_no;
+        this.col_no = col_no;
+        this.char_index = char_index;
+    }
+}
+
 class Token {
-    constructor(kind, loc, char_index, value=null) {
+    constructor(kind, loc, value=null) {
         this.kind = kind;
         this.value = value;
         this.loc = loc;
-        this.char_index = char_index;
     }
 };
 
 export class CompileError {
-    constructor(message, loc, char_index) {
+    constructor(message, loc) {
         this.message = message;
-        this.loc = loc;  // [line_no, col_no] or null
-        this.char_index = char_index;  // number or null
+        this.loc = loc;  // Loc or null
     }
     format() {
         if (this.loc == null) {
             return this.message;
         }
-        return `${this.loc[0]}:${this.loc[1]}: ${this.message}`;
+        return `${this.loc.line_no}:${this.loc.col_no}: ${this.message}`;
     }
 }
 
@@ -86,14 +92,6 @@ const operators = new Map([
     [":", TokenKind.COLON],
 ])
 
-class TokenizerState {
-    constructor(line_no, col_no, char_index) {
-        this.line_no = line_no;
-        this.col_no = col_no;
-        this.char_index = char_index;
-    }
-}
-
 class Tokenizer {
     constructor(str) {
         this.str = str;
@@ -110,13 +108,11 @@ class Tokenizer {
         this.col_no += chars;
         this.c = this.str[this.ptr - 1];
     }
-    complain(message, state=null) {
-        if (state == null) {
-            state = this.export_state();
+    complain(message, loc=null) {
+        if (loc == null) {
+            loc = this.export_state();
         }
-        throw new CompileError(
-            message, [state.line_no, state.col_no], state.char_index
-        );
+        throw new CompileError(message, loc);
     }
     skip_ws() {
         while (this.c == ' ' || this.c == '\t') {
@@ -128,15 +124,13 @@ class Tokenizer {
         return regex.exec(this.str);
     }
     export_state() {
-        return new TokenizerState(this.line_no, this.col_no, this.ptr - 1);
+        return new Loc(this.line_no, this.col_no, this.ptr - 1);
     }
-    make_token(kind, value=null, state=null) {
-        if (state == null) {
-            state = this.export_state();
+    make_token(kind, value=null, loc=null) {
+        if (loc == null) {
+            loc = this.export_state();
         }
-        return new Token(
-            kind, [state.line_no, state.col_no], state.char_index, value
-        );
+        return new Token(kind, loc, value);
     }
     parse_line() {
         const res = [];
@@ -370,7 +364,7 @@ class Parser {
         this.tokens = tokens;
     }
     complain(token, message) {
-        throw new CompileError(message, token.loc, token.char_index);
+        throw new CompileError(message, token.loc);
     }
     expect(...kinds) {
         let {value} = this.tokens.next();

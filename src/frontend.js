@@ -202,12 +202,13 @@ function compileCode(configCls) {
             const prefixes = [];
             if (exc.loc) {
                 const locElement = document.createElement("a");
+                const {line_no, col_no, char_index} = exc.loc;
                 locElement.onclick = (event) => {
                     try {
                         // The index may have become invalid (after
                         // user changes code)
                         editor.dispatch({
-                            selection: {anchor: exc.char_index}
+                            selection: {anchor: char_index}
                         });
                     }
                     catch (exc) {
@@ -218,8 +219,7 @@ function compileCode(configCls) {
                     editor.focus();
                     return false;
                 };
-                const [line, col] = exc.loc;
-                locElement.textContent = `line ${line} col ${col}`;
+                locElement.textContent = `line ${line_no} col ${col_no}`;
                 prefixes.push(
                     "At ",
                     locElement,
