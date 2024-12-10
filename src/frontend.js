@@ -32,7 +32,7 @@ function crashed() {
         document.createElement("br"),
         "Please return it to the vendor (",
         createSubmitIssue(),
-        ") with the recipe you were trying to use. Thanks!",
+        "). Please also tell us the recipe you were trying to use. Thanks!",
     ];
 }
 
@@ -75,12 +75,18 @@ function muffinUnexpectedError(exc) {
     else {
         // Real unexpected error
         textKind = "exec-error";
+        console.error(exc);
         element.append(
-            "An unexpected error happened.",
+            "An unexpected error occurred when running your recipe.",
             document.createElement("br"),
-            "You might have found a bug in Muffin! Please ",
+            "It might be due to call stack overflow, in which case you "
+            + "need to check if there are infinite recursions in your recipe. "
+            + "Otherwise, you might have found a bug in Muffin! Please ",
             createSubmitIssue(),
             ".",
+            document.createElement("br"),
+            document.createElement("br"),
+            String(exc),
         );
     }
     element.className = textKind;

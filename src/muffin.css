@@ -35,7 +35,7 @@ h1#title {
 
 p#description {
     text-align: center;
-    margin-top: 0.4em;
+    margin-top: 0.2em;
 }
 
 div#code-wrapper {
@@ -153,12 +153,12 @@ div#examples span:hover {
 button#load-example {
     cursor: auto;
     background-color: #8a00a3;
-    border-color: #c427e0;
+    border-color: #b623d0;
 }
 
 button#open-docs {
     background-color: #178ca0;
-    border-color: #1ecae8;
+    border-color: #25b3cb;
 }
 button#open-docs:hover {
     background-color: #1aaac2;
@@ -213,6 +213,7 @@ input#input-line {
 input#input-line:disabled {
     border-color: #949aa9;
     background-color: #4a515f;
+    cursor: not-allowed;
 }
 input#input-line::placeholder {
     color: #afafaf;
@@ -237,7 +238,7 @@ button#send:enabled:hover {
 button#send:disabled,
 button#compile-to-node:disabled {
     background-color: #808080;
-    border-color: white;
+    border-color: #afafaf;
     cursor: not-allowed;
 }
 
