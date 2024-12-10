@@ -1,7 +1,5 @@
 # The Muffin Programming Language
 
-**Note: WORK IN PROGRESS! Many things here have not been implemented.**
-
 **Muffin** is a brand new **programming language** designed and implemented by
 me in order to participate in [High Seas hold by Hack Club][high-seas].
 
@@ -49,6 +47,17 @@ method
 ```
 
 [high-seas]: https://highseas.hackclub.com/
+
+# Visit Muffin's [demo website][muffin-demo]!
+
+I built a web page so that you can play around a bit with Muffin! You can run
+Muffin programs in the browser, see more example Muffin programs, and write
+your recipe in an editor with syntax highlighting, autocompletion and other
+features in your favorite IDE! (Thanks to [Cloudflare Pages][cloudflare-pages]
+for hosting this!)
+
+[muffin-demo]: https://muffinlang.pages.dev/
+[cloudflare-pages]: https://pages.cloudflare.com/
 
 # Language Specification
 
@@ -293,20 +302,20 @@ You can find a bunch of esolangs on the [esolang wiki][esolang-wiki].
 Muffin is:
 
 * **Technical**: I really designed this programming language and implemented
-  it myself. The compiler works like most compilers in the world -- tokenizer
-  (lexer), parser, and code generator. The frontend editor is powered by
-  [CodeMirror 6](code-mirror). I added the autocompletion, parsing (syntax
+  it in JavaScript. The compiler works like most compilers in the world --
+  tokenizer (lexer), parser, and code generator. The frontend editor is powered
+  by [CodeMirror 6](code-mirror). I added the autocompletion, parsing (syntax
   highlighting) and auto-indentation logic. The build script of the frontend is
   written in Python.
-* **Creative**: Write tasty programs that look like recipes!
-* **Educational**: If you haven't heard of esolangs before, Muffin will be the
-  first one!
-* **Presented well**: Muffin has a demo website and you can try it out
-  yourself. And look at this descriptive README file!
+* **Creative**: Write tasty programs that look like cooking recipes!
+* **Educational**: If you haven't heard of esolangs before, then you've just
+  seen one!
+* **Presented well**: Muffin has a [demo website][muffin-demo] and you can try
+  it out yourself. And look at this descriptive README file!
 
 [code-mirror]: https://codemirror.net/
 
-## How do I build your demo website locally?
+## How do I build your demo website from source locally?
 
 Dependencies:
 
